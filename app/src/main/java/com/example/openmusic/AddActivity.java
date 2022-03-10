@@ -24,6 +24,7 @@ import com.github.kiulian.downloader.model.videos.formats.VideoFormat;
 import com.github.kiulian.downloader.model.videos.formats.VideoWithAudioFormat;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -35,6 +36,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -47,7 +49,7 @@ import java.util.concurrent.TimeoutException;
 
 public class AddActivity extends AppCompatActivity {
 
-    EditText edxLink;
+    EditText edxLink, edxName;
     Button btnDownload;
     ProgressBar progressBar;
     private static final int REQUEST_CODE_WRITE_FILES = 2;
@@ -61,20 +63,18 @@ public class AddActivity extends AppCompatActivity {
         setContentView(R.layout.activity_add);
 
         edxLink = findViewById(R.id.edxLink);
+        edxName = findViewById(R.id.edxName);
         btnDownload = findViewById(R.id.btnDownload);
         progressBar = findViewById(R.id.progressBar);
 
-        btnDownload.setOnClickListener(this::download);
+        btnDownload.setOnClickListener(this::ButtonClickDownload);
 
 
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public void download(View view){
-        test2();
+    public void ButtonClickDownload(View view){
         setPermission();
-
-
     }
 
 
@@ -90,18 +90,22 @@ public class AddActivity extends AppCompatActivity {
         }
         // если разрешение установлено, загружаем контакты
         if (WRITE_FILES_GRANTED) {
-            test2();
-
+            String link = edxLink.getText().toString();
+            if(link.length() > 0) {
+                download(link.replace("https://youtu.be/", ""));
+            }
         }
     }
 
 
-    public void test2(){
+
+
+    public void download(String videoId){
         YoutubeDownloader downloader = new YoutubeDownloader();
         Config config = downloader.getConfig();
         config.setMaxRetries(0);
 
-        String videoId = "NlAeFb3j2aw";
+       // String videoId = "NlAeFb3j2aw";
 
         File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
         //File outputDir = new File(getExternalCacheDir().getPath());
@@ -158,7 +162,15 @@ public class AddActivity extends AppCompatActivity {
                 })
                 .saveTo(outputDir)
                 .async();
+        String name = edxName.getText().toString();
+        if(name.length() > 0){
+            request.renameTo(name);
+        }
+
         Response<File> response = downloader.downloadVideoFile(request);
-        File data = response.data(); // will block current thread
+        File data = response.data();// will block current thread
+
+        Toast.makeText(AddActivity.this, "Good", Toast.LENGTH_SHORT).show();
+        onBackPressed();
     }
 }
