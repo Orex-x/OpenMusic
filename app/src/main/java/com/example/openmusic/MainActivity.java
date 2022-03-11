@@ -48,7 +48,7 @@ import android.widget.ListView;
 public class MainActivity extends AppCompatActivity {
 
     MediaPlayer mPlayer = new MediaPlayer();;
-    Button btnBack, btnPause, btnNext, btnAdd;
+    Button btnBack, btnPause, btnNext, btnAdd, btnUpdateList;
     ListView lvMusics;
     SimpleAdapter adapter;
     Stack<String> globalPath = new Stack<>();
@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         btnPause = findViewById(R.id.btnPause);
         btnNext = findViewById(R.id.btnNext);
         btnAdd = findViewById(R.id.btnAdd);
+        btnUpdateList = findViewById(R.id.btnUpdateList);
         seekBar = findViewById(R.id.seekBar);
         lvMusics = findViewById(R.id.lvMusics);
         elapsed = findViewById(R.id.elapsed);
@@ -93,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
 
         btnAdd.setOnClickListener(this::goAddActivity);
 
+        btnUpdateList.setOnClickListener(this::updateList);
+
         lvMusics.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -106,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
             public void onCompletion(MediaPlayer mp) {
                 nextSong(null);
                 seekBar.setProgress(mp.getCurrentPosition());
-
             }
         });
 
@@ -145,6 +147,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void updateList(View view){
+        setPermission();
+    }
+
     public void seekTo(int progress) {
         mPlayer.seekTo(progress);
     }
@@ -157,9 +163,11 @@ public class MainActivity extends AppCompatActivity {
             READ_FILES_GRANTED = true;
         } else {
             // вызываем диалоговое окно для установки разрешений
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_READ_FILES);
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    REQUEST_CODE_READ_FILES);
         }
-        // если разрешение установлено, загружаем контакты
+        // если разрешение установлено
         if (READ_FILES_GRANTED) {
             getSongList();
             //сортировка в алфавитном порядке
@@ -220,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void getSongList() {
+        songList.clear();
         ContentResolver musicResolver = getContentResolver();
         Uri musicUri =  MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
@@ -251,6 +260,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         mPlayer.stop();
+    }
+
+    // Вызывается перед тем, как Активность становится "видимой".
+    @Override
+    public void onRestart(){
+        super.onRestart();
+        setPermission();
     }
 
     public String milliSecondsToTimer(long milliseconds){
@@ -295,8 +311,6 @@ public class MainActivity extends AppCompatActivity {
             seekHandler.postDelayed(this, 15);
         }
     };
-
-
 }
 
 

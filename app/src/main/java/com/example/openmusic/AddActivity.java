@@ -30,12 +30,15 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
@@ -52,8 +55,12 @@ public class AddActivity extends AppCompatActivity {
     EditText edxLink, edxName;
     Button btnDownload;
     ProgressBar progressBar;
+    TextView txtProgress;
     private static final int REQUEST_CODE_WRITE_FILES = 2;
     private static boolean WRITE_FILES_GRANTED = false;
+
+
+    final Handler h = new Handler();
 
 
 
@@ -64,8 +71,10 @@ public class AddActivity extends AppCompatActivity {
 
         edxLink = findViewById(R.id.edxLink);
         edxName = findViewById(R.id.edxName);
+        txtProgress = findViewById(R.id.txtProgress);
         btnDownload = findViewById(R.id.btnDownload);
         progressBar = findViewById(R.id.progressBar);
+        progressBar.setMax(100);
 
         btnDownload.setOnClickListener(this::ButtonClickDownload);
 
@@ -92,25 +101,19 @@ public class AddActivity extends AppCompatActivity {
         if (WRITE_FILES_GRANTED) {
             String link = edxLink.getText().toString();
             if(link.length() > 0) {
-                download(link.replace("https://youtu.be/", ""));
+                downloadAsync(link.replace("https://youtu.be/", ""));
             }
         }
     }
 
 
-
-
-    public void download(String videoId){
+    public void downloadAsync(String videoId){
         YoutubeDownloader downloader = new YoutubeDownloader();
         Config config = downloader.getConfig();
         config.setMaxRetries(0);
 
-       // String videoId = "NlAeFb3j2aw";
-
         File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
         //File outputDir = new File(getExternalCacheDir().getPath());
-
-
 
         // async parsing
         RequestVideoInfo requestVideoInfo = new RequestVideoInfo(videoId)
@@ -146,7 +149,7 @@ public class AddActivity extends AppCompatActivity {
                     @Override
                     public void onDownloading(int progress) {
                         System.out.printf("Downloaded %d%%\n", progress);
-                        progressBar.setMax(100);
+                        txtProgress.setText("Downloaded " + progress + "%");
                         progressBar.setProgress(progress);
                     }
 
@@ -166,11 +169,18 @@ public class AddActivity extends AppCompatActivity {
         if(name.length() > 0){
             request.renameTo(name);
         }
-
         Response<File> response = downloader.downloadVideoFile(request);
-        File data = response.data();// will block current thread
-
-        Toast.makeText(AddActivity.this, "Good", Toast.LENGTH_SHORT).show();
-        onBackPressed();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                File data = response.data();
+                Looper.prepare();
+                Toast.makeText (AddActivity.this, "Good", Toast.LENGTH_LONG).show ();
+                //onBackPressed();
+                Looper.loop();
+            }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
     }
 }

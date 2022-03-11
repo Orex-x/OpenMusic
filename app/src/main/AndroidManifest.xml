@@ -18,7 +18,8 @@
         android:theme="@style/Theme.OpenMusic">
         <activity
             android:name=".AddActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"/>
         <activity
             android:name=".MainActivity"
             android:exported="true">
