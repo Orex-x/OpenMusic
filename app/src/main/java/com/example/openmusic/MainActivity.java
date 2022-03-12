@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.content.Intent;
@@ -38,20 +40,18 @@ import java.util.Comparator;
 import java.util.Stack;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.net.Uri;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.widget.ListView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SongAdapter.OnCardClickListener{
 
-    MediaPlayer mPlayer = new MediaPlayer();;
+    MediaPlayer mPlayer = new MediaPlayer();
     Button btnBack, btnPause, btnNext, btnAdd, btnUpdateList;
-    ListView lvMusics;
-    SimpleAdapter adapter;
-    Stack<String> globalPath = new Stack<>();
+    RecyclerView lvMusics;
+    SongAdapter adapter;
     private ArrayList<Song> songList = new ArrayList<Song>();
     private int currentSong = 0;
     SeekBar seekBar;
@@ -82,7 +82,9 @@ public class MainActivity extends AppCompatActivity {
         txtSongAuthor = findViewById(R.id.txtSongAuthor);
 
 
-        adapter = new SimpleAdapter(this, songList);
+        adapter = new SongAdapter(this, songList);
+        adapter.setOnCardClickListener(this);
+        lvMusics.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
         lvMusics.setAdapter(adapter);
 
 
@@ -96,13 +98,14 @@ public class MainActivity extends AppCompatActivity {
 
         btnUpdateList.setOnClickListener(this::updateList);
 
-        lvMusics.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        /*lvMusics.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 currentSong = position;
                 playSong(currentSong);
             }
-        });
+        });*/
+
 
         mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -134,8 +137,6 @@ public class MainActivity extends AppCompatActivity {
             public void onStopTrackingTouch(SeekBar seekBar) {
                 seekTo(seekBar.getProgress());
             }
-
-
         });
 
         setPermission();
@@ -182,8 +183,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void playSong(int position){
         Song song = songList.get(position);
-        String dir = Environment.getExternalStoragePublicDirectory(song.getPath() + song.getDisplayName()).getPath();
-        Uri uri = Uri.parse(dir);
+        String path = Environment.getExternalStoragePublicDirectory(song.getPath() + song.getDisplayName()).getPath();
+        Uri uri = Uri.parse(path);
         try {
             //mPlayer.stop();
             mPlayer.reset();
@@ -256,6 +257,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -267,6 +269,35 @@ public class MainActivity extends AppCompatActivity {
     public void onRestart(){
         super.onRestart();
         setPermission();
+    }
+
+    // метод, который получит события из нашего колбэка
+    @Override
+    public void onDeleteClick(View view,final int pos) {
+        Song song = songList.get(pos);
+        String path = Environment.getExternalStoragePublicDirectory(
+                song.getPath() + song.getDisplayName()).getPath();
+        File file = new File(path);
+        try{
+            file.delete();
+            songList.remove(pos);
+            if(pos == currentSong){
+                if(currentSong == songList.size())
+                    currentSong = 0;
+                playSong(currentSong);
+            }
+            Toast.makeText(MainActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
+
+            adapter.notifyDataSetChanged();
+        }catch (Exception e){
+            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onSongClick(View view, int position) {
+        currentSong = position;
+        playSong(currentSong);
     }
 
     public String milliSecondsToTimer(long milliseconds){

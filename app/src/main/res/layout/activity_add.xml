@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/activity_back"
     tools:context=".AddActivity">
 
     <Button
@@ -12,6 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:text="Download"
+        style="@style/ButtonStyle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
@@ -27,6 +29,7 @@
         android:layout_marginRight="16dp"
         android:inputType="textPersonName"
         android:hint="Link..."
+        style="@style/EditEditStyle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
@@ -40,7 +43,9 @@
         android:layout_marginTop="76dp"
         android:layout_marginRight="16dp"
         android:ems="10"
+        android:maxLength="30"
         android:hint="Name"
+        style="@style/EditEditStyle"
         android:inputType="textPersonName"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -65,6 +70,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginBottom="8dp"
         android:text="Downloaded 0%"
+        style="@style/TextViewStyle"
         app:layout_constraintBottom_toTopOf="@+id/progressBar"
         app:layout_constraintStart_toStartOf="parent" />
 

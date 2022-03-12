@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ButtonStyle">
+        <item name="android:fontFamily">@font/days</item>
+        <item name="android:background">@drawable/button_background</item>
+    </style>
+</resources>

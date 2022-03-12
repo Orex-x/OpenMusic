@@ -169,6 +169,7 @@ public class AddActivity extends AppCompatActivity {
         if(name.length() > 0){
             request.renameTo(name);
         }
+
         Response<File> response = downloader.downloadVideoFile(request);
         Runnable runnable = new Runnable() {
             @Override
