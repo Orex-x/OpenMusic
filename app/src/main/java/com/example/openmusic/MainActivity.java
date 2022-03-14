@@ -4,6 +4,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -46,18 +49,22 @@ import android.content.ContentResolver;
 import android.database.Cursor;
 import android.widget.ListView;
 
-public class MainActivity extends AppCompatActivity implements SongAdapter.OnCardClickListener{
+import com.example.openmusic.fragments.SongControlFragment;
+import com.example.openmusic.fragments.SongListFragment;
 
-    MediaPlayer mPlayer = new MediaPlayer();
-    Button btnBack, btnPause, btnNext, btnAdd, btnUpdateList;
-    RecyclerView lvMusics;
+public class MainActivity extends AppCompatActivity implements
+        SongAdapter.OnCardClickListener,
+        SongListFragment.SongListFragmentListener,
+        SongControlFragment.SongControlFragmentListener
+
+{
+
     SongAdapter adapter;
-    private ArrayList<Song> songList = new ArrayList<Song>();
-    private int currentSong = 0;
-    SeekBar seekBar;
-    TextView elapsed, remaining, txtSongName, txtSongAuthor;
-    Handler seekHandler = new Handler();
 
+    Player player;
+
+    private SongListFragment songListFragment;
+    private SongControlFragment songControlFragment;
 
     private static final int REQUEST_CODE_READ_FILES = 1;
     private static boolean READ_FILES_GRANTED = false;
@@ -69,92 +76,31 @@ public class MainActivity extends AppCompatActivity implements SongAdapter.OnCar
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnBack = findViewById(R.id.btnBack);
-        btnPause = findViewById(R.id.btnPause);
-        btnNext = findViewById(R.id.btnNext);
-        btnAdd = findViewById(R.id.btnAdd);
-        btnUpdateList = findViewById(R.id.btnUpdateList);
-        seekBar = findViewById(R.id.seekBar);
-        lvMusics = findViewById(R.id.lvMusics);
-        elapsed = findViewById(R.id.elapsed);
-        remaining = findViewById(R.id.remaining);
-        txtSongName = findViewById(R.id.txtSongName);
-        txtSongAuthor = findViewById(R.id.txtSongAuthor);
+        player = PlayerController.getPlayer();
+
+        songListFragment = new SongListFragment();
+        songListFragment.setSongListFragmentListener(this);
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.fragment, songListFragment);
+        fragmentTransaction.commit();
+
+        FragmentTransaction fragmentTransactionSongControl = fragmentManager.beginTransaction();
+        songControlFragment = new SongControlFragment();
+        songControlFragment.setSongControlFragmentListener(this);
+        fragmentTransactionSongControl.add(R.id.fragmentControlSong, songControlFragment);
+        fragmentTransactionSongControl.commit();
 
 
-        adapter = new SongAdapter(this, songList);
+        adapter = new SongAdapter(this, player.getSongs());
         adapter.setOnCardClickListener(this);
-        lvMusics.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
-        lvMusics.setAdapter(adapter);
 
 
-        btnPause.setOnClickListener(this::pauseSong);
-
-        btnNext.setOnClickListener(this::nextSong);
-
-        btnBack.setOnClickListener(this::backSong);
-
-        btnAdd.setOnClickListener(this::goAddActivity);
-
-        btnUpdateList.setOnClickListener(this::updateList);
-
-        /*lvMusics.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                currentSong = position;
-                playSong(currentSong);
-            }
-        });*/
-
-
-        mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                nextSong(null);
-                seekBar.setProgress(mp.getCurrentPosition());
-            }
-        });
-
-        mPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-            @Override
-            public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                seekBar.setSecondaryProgress(percent);
-            }
-        });
-
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                seekTo(seekBar.getProgress());
-            }
-        });
 
         setPermission();
     }
 
-    public void goAddActivity(View view){
-        Intent intent = new Intent(MainActivity.this, AddActivity.class);
-        startActivity(intent);
 
-    }
-
-    public void updateList(View view){
-        setPermission();
-    }
-
-    public void seekTo(int progress) {
-        mPlayer.seekTo(progress);
-    }
 
     public void setPermission(){
         // получаем разрешения
@@ -172,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements SongAdapter.OnCar
         if (READ_FILES_GRANTED) {
             getSongList();
             //сортировка в алфавитном порядке
-            Collections.sort(songList, new Comparator<Song>(){
+            Collections.sort(player.getSongs(), new Comparator<Song>(){
                 public int compare(Song a, Song b){
                     return a.getTitle().compareTo(b.getTitle());
                 }
@@ -182,54 +128,11 @@ public class MainActivity extends AppCompatActivity implements SongAdapter.OnCar
     }
 
     public void playSong(int position){
-        Song song = songList.get(position);
-        String path = Environment.getExternalStoragePublicDirectory(song.getPath() + song.getDisplayName()).getPath();
-        Uri uri = Uri.parse(path);
-        try {
-            //mPlayer.stop();
-            mPlayer.reset();
-            mPlayer.setDataSource(MainActivity.this, uri);
-            mPlayer.prepare();
-            mPlayer.start();
-
-            seekBar.setProgress(0);
-            seekBar.setMax(mPlayer.getDuration());
-            // Updating progress bar
-            seekHandler.postDelayed(updateSeekBar, 15);
-
-            txtSongName.setText(song.getTitle());
-            txtSongAuthor.setText(song.getArtist());
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void pauseSong(View view){
-        if (mPlayer.isPlaying())
-            mPlayer.pause();
-        else{
-            mPlayer.start();
-        }
-    }
-
-    public void nextSong(View view){
-        currentSong++;
-        if(currentSong == songList.size())
-            currentSong = 0;
-        playSong(currentSong);
-    }
-
-    public void backSong(View view){
-        currentSong--;
-        if(currentSong == -1)
-            currentSong = songList.size() - 1;
-        playSong(currentSong);
+        player.playSong(position, this);
     }
 
     public void getSongList() {
-        songList.clear();
+        player.getSongs().clear();
         ContentResolver musicResolver = getContentResolver();
         Uri musicUri =  MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
@@ -251,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements SongAdapter.OnCar
                 String thisArtist = musicCursor.getString(artistColumn);
                 String thisDisplayName = musicCursor.getString(displayNameColumn);
                 String thisRelativePath = musicCursor.getString(relativePathColumn);
-                songList.add(new Song(thisId, thisTitle, thisArtist, thisDisplayName, thisRelativePath));
+                player.getSongs().add(new Song(thisId, thisTitle, thisArtist, thisDisplayName, thisRelativePath));
             }
             while (musicCursor.moveToNext());
         }
@@ -261,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements SongAdapter.OnCar
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mPlayer.stop();
+        player.stop();
     }
 
     // Вызывается перед тем, как Активность становится "видимой".
@@ -274,17 +177,15 @@ public class MainActivity extends AppCompatActivity implements SongAdapter.OnCar
     // метод, который получит события из нашего колбэка
     @Override
     public void onDeleteClick(View view,final int pos) {
-        Song song = songList.get(pos);
+        Song song = player.getSongs().get(pos);
         String path = Environment.getExternalStoragePublicDirectory(
                 song.getPath() + song.getDisplayName()).getPath();
         File file = new File(path);
         try{
             file.delete();
-            songList.remove(pos);
-            if(pos == currentSong){
-                if(currentSong == songList.size())
-                    currentSong = 0;
-                playSong(currentSong);
+            player.getSongs().remove(pos);
+            if(pos == player.getCurrentSong()){
+                player.nextSong(this);
             }
             Toast.makeText(MainActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
 
@@ -296,52 +197,45 @@ public class MainActivity extends AppCompatActivity implements SongAdapter.OnCar
 
     @Override
     public void onSongClick(View view, int position) {
-        currentSong = position;
-        playSong(currentSong);
+        playSong(position);
     }
 
-    public String milliSecondsToTimer(long milliseconds){
-        String finalTimerString = "";
-        String secondsString = "";
+    //-----------------------------------LIST SONGS FRAGMENT----------------------------------
 
-        // Convert total duration into time
-        int hours = (int)( milliseconds / (1000*60*60));
-        int minutes = (int)(milliseconds % (1000*60*60)) / (1000*60);
-        int seconds = (int) ((milliseconds % (1000*60*60)) % (1000*60) / 1000);
-        // Add hours if there
-        if(hours > 0){
-            finalTimerString = hours + ":";
-        }
+    @Override
+    public void setAdapter(RecyclerView recyclerView) {
+        recyclerView.setLayoutManager(new LinearLayoutManager(this,
+                        RecyclerView.VERTICAL, false));
+        recyclerView.setAdapter(adapter);
 
-        // Prepending 0 to seconds if it is one digit
-        if(seconds < 10) {
-            secondsString = "0" + seconds;
-        }else {
-            secondsString = "" + seconds;
-        }
-
-        finalTimerString = finalTimerString + minutes + ":" + secondsString;
-
-        // return timer string
-        return finalTimerString;
     }
-    private Runnable updateSeekBar = new Runnable() {
-        public void run() {
-            long totalDuration = mPlayer.getDuration();
-            long currentDuration = mPlayer.getCurrentPosition();
 
-            // Displaying Total Duration time
-            remaining.setText(""+ milliSecondsToTimer(totalDuration-currentDuration));
-            // Displaying time completed playing
-            elapsed.setText(""+ milliSecondsToTimer(currentDuration));
+    @Override
+    public void updateList() {
+        setPermission();
+    }
 
-            // Updating progress bar
-            seekBar.setProgress((int)currentDuration);
+    //-----------------------------------SONG CONTROL FRAGMENT----------------------------------
 
-            // Call this thread again after 15 milliseconds => ~ 1000/60fps
-            seekHandler.postDelayed(this, 15);
-        }
-    };
+    @Override
+    public void clickBack() {
+        player.backSong(this);
+    }
+
+    @Override
+    public void clickPause() {
+        player.pauseSong();
+    }
+
+    @Override
+    public void clickNext() {
+        player.nextSong(this);
+    }
+
+    @Override
+    public void seekTo(int progress) {
+        player.seekTo(progress);
+    }
 }
 
 
