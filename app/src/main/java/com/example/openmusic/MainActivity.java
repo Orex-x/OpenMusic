@@ -1,61 +1,43 @@
 package com.example.openmusic;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
-import android.media.MediaPlayer;
-import android.os.AsyncTask;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.ListView;
-import android.widget.ProgressBar;
-import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Stack;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import android.net.Uri;
 import android.content.ContentResolver;
 import android.database.Cursor;
-import android.widget.ListView;
 
+import com.example.openmusic.adpters.SongAdapter;
+import com.example.openmusic.fragments.DownloadSongFragment;
 import com.example.openmusic.fragments.SongControlFragment;
 import com.example.openmusic.fragments.SongListFragment;
 
 public class MainActivity extends AppCompatActivity implements
         SongAdapter.OnCardClickListener,
         SongListFragment.SongListFragmentListener,
-        SongControlFragment.SongControlFragmentListener
+        SongControlFragment.SongControlFragmentListener,
+        DownloadSongFragment.DownloadSongFragmentListener
 
 {
 
@@ -65,10 +47,14 @@ public class MainActivity extends AppCompatActivity implements
 
     private SongListFragment songListFragment;
     private SongControlFragment songControlFragment;
+    private DownloadSongFragment downloadSongFragment;
 
     private static final int REQUEST_CODE_READ_FILES = 1;
     private static boolean READ_FILES_GRANTED = false;
 
+    Button btnHome, btnAdd, btnPlaylists;
+    private Handler handler;
+    Handler permissionHandler = new Handler();
 
 
     @Override
@@ -76,18 +62,23 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+
         player = PlayerController.getPlayer();
 
         songListFragment = new SongListFragment();
         songListFragment.setSongListFragmentListener(this);
+        songControlFragment = new SongControlFragment();
+        songControlFragment.setSongControlFragmentListener(this);
+        downloadSongFragment = new DownloadSongFragment();
+        downloadSongFragment.setSongListFragmentListener(this);
+
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.fragment, songListFragment);
         fragmentTransaction.commit();
 
         FragmentTransaction fragmentTransactionSongControl = fragmentManager.beginTransaction();
-        songControlFragment = new SongControlFragment();
-        songControlFragment.setSongControlFragmentListener(this);
         fragmentTransactionSongControl.add(R.id.fragmentControlSong, songControlFragment);
         fragmentTransactionSongControl.commit();
 
@@ -95,11 +86,50 @@ public class MainActivity extends AppCompatActivity implements
         adapter = new SongAdapter(this, player.getSongs());
         adapter.setOnCardClickListener(this);
 
+        btnHome = findViewById(R.id.btnHome);
+        btnAdd = findViewById(R.id.btnAdd);
+        btnPlaylists = findViewById(R.id.btnPlaylists);
+
+        btnHome.setOnClickListener(this::setHomeFragment);
+        btnAdd.setOnClickListener(this::setAddFragment);
+        btnPlaylists.setOnClickListener(this::setPlaylistsFragment);
+
 
 
         setPermission();
     }
 
+    public void setHomeFragment(View view){
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragment, songListFragment);
+        fragmentTransaction.commit();
+    }
+
+    public void setAddFragment(View view){
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragment, downloadSongFragment);
+        fragmentTransaction.commit();
+    }
+
+    public void setPlaylistsFragment(View view){
+
+    }
+
+
+    private Runnable permissionGranted = new Runnable() {
+        public void run() {
+            getSongList();
+            //сортировка в алфавитном порядке
+            Collections.sort(player.getSongs(), new Comparator<Song>(){
+                public int compare(Song a, Song b){
+                    return a.getTitle().compareTo(b.getTitle());
+                }
+            });
+            adapter.notifyDataSetChanged();
+        }
+    };
 
 
     public void setPermission(){
@@ -116,14 +146,7 @@ public class MainActivity extends AppCompatActivity implements
         }
         // если разрешение установлено
         if (READ_FILES_GRANTED) {
-            getSongList();
-            //сортировка в алфавитном порядке
-            Collections.sort(player.getSongs(), new Comparator<Song>(){
-                public int compare(Song a, Song b){
-                    return a.getTitle().compareTo(b.getTitle());
-                }
-            });
-            adapter.notifyDataSetChanged();
+            permissionHandler.postDelayed(permissionGranted, 15);
         }
     }
 
@@ -188,7 +211,6 @@ public class MainActivity extends AppCompatActivity implements
                 player.nextSong(this);
             }
             Toast.makeText(MainActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
-
             adapter.notifyDataSetChanged();
         }catch (Exception e){
             Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();

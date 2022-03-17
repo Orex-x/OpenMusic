@@ -9,140 +9,7 @@
     android:screenOrientation="portrait"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/btnBack"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="16dp"
-        android:text="Back"
-        android:visibility="gone"
-        style="@style/ButtonStyle"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/btnPause"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="pause"
-        android:visibility="gone"
-        style="@style/ButtonStyle"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/btnNext"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:text="Next"
-        android:visibility="gone"
-        style="@style/ButtonStyle"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <SeekBar
-        android:id="@+id/seekBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="16dp"
-        android:layout_marginLeft="16dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/btnPause"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/lvMusics"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
-        android:layout_marginTop="80dp"
-        android:visibility="gone"
-        android:layout_marginBottom="150dp"
-        app:layout_constraintBottom_toTopOf="@+id/seekBar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/elapsed"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:text="0:00"
-        android:visibility="gone"
-        style="@style/TextViewStyle"
-        app:layout_constraintBottom_toTopOf="@+id/seekBar"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/remaining"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0:00"
-        android:visibility="gone"
-        style="@style/TextViewStyle"
-        app:layout_constraintBottom_toTopOf="@+id/seekBar"
-        app:layout_constraintEnd_toEndOf="@+id/seekBar" />
-
-    <TextView
-        android:id="@+id/txtSongName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text=""
-        android:visibility="gone"
-        style="@style/TextViewStyle"
-        app:layout_constraintBottom_toTopOf="@+id/seekBar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.501"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/txtSongAuthor"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text=""
-        android:visibility="gone"
-        style="@style/TextViewStyle"
-        app:layout_constraintBottom_toTopOf="@+id/txtSongName"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/btnAdd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="8dp"
-        android:text="Add"
-        android:visibility="gone"
-        style="@style/ButtonStyle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/btnUpdateList"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="Update"
-        android:visibility="gone"
-        style="@style/ButtonStyle"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-  <FrameLayout
+    <FrameLayout
       android:id="@+id/fragment"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
@@ -159,5 +26,37 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/btnHome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/ButtonStyle"
+            android:layout_weight="1"
+            android:text="Home" />
+        <Button
+            android:id="@+id/btnAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/ButtonStyle"
+            android:layout_weight="1"
+            android:text="Add" />
+        <Button
+            android:id="@+id/btnPlaylists"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/ButtonStyle"
+            android:layout_weight="1"
+            android:text="Playlists" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

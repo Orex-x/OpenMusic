@@ -1,4 +1,4 @@
-package com.example.openmusic;
+package com.example.openmusic.adpters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -8,6 +8,9 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.openmusic.R;
+import com.example.openmusic.Song;
 
 import java.util.ArrayList;
 
@@ -19,7 +22,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
 
     // создаем сам интерфейс и указываем метод и передаваемые им аргументы
     // View на котором произошло событие и позиция этого View
-    interface OnCardClickListener {
+    public interface OnCardClickListener {
         void onDeleteClick(View view, int position);
         void onSongClick(View view, int position);
     }
@@ -28,7 +31,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
     private static OnCardClickListener mListener;
 
 
-    SongAdapter(Context context, ArrayList<Song> states) {
+    public SongAdapter(Context context, ArrayList<Song> states) {
         this.songs = states;
         this.inflater = LayoutInflater.from(context);
     }
