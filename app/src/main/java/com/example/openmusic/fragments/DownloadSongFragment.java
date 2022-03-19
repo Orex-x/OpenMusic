@@ -95,7 +95,6 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
                 }
             }
 
-            @Override
             public void afterTextChanged(Editable s) {
 
             }
