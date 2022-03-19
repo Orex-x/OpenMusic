@@ -11,7 +11,7 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.openmusic.R;
-import com.example.openmusic.Song;
+import com.example.openmusic.models.Song;
 
 import java.util.ArrayList;
 
@@ -47,7 +47,10 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         Song song = songs.get(position);
-        holder.txtListItem.setText(song.getTitle());
+        if(song.getTitle().length() > 50){
+            holder.txtListItem.setText(song.getTitle().substring(0,50) + "...");
+        }else
+            holder.txtListItem.setText(song.getTitle());
     }
 
     @Override

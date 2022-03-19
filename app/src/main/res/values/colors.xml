@@ -10,5 +10,6 @@
    <!-- <color name="button_back">#ABF4FD</color>-->
     <color name="button_back">#8F7780B6</color>
     <color name="activity_back">#DAFBFF</color>
+    <color name="fragment_back">#9EF1FB</color>
     <color name="rad">#9EE66B62</color>
 </resources>

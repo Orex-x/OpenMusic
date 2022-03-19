@@ -23,13 +23,10 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.RadioGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.example.openmusic.MyAudioFormat;
+import com.example.openmusic.models.MyAudioFormat;
 import com.example.openmusic.R;
-import com.example.openmusic.adpters.MusicFormatAdapter;
 import com.example.openmusic.adpters.RecyclerAdapterTest;
 import com.github.kiulian.downloader.Config;
 import com.github.kiulian.downloader.YoutubeDownloader;
@@ -112,14 +109,15 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
     }
 
 
+    public void YandexDownload(){
+
+    }
+
 
     public void requestVideoInfo(String videoId){
         YoutubeDownloader downloader = new YoutubeDownloader();
         Config config = downloader.getConfig();
         config.setMaxRetries(0);
-
-        //File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
-        //File outputDir = new File(getExternalCacheDir().getPath());
 
         // async parsing
         RequestVideoInfo requestVideoInfo = new RequestVideoInfo(videoId)
@@ -157,38 +155,8 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         List<VideoFormat> videoFormats = video.videoFormats();
     }
 
-    public void downloadAsync(String videoId){
+    public void downloadAsync(){
         YoutubeDownloader downloader = new YoutubeDownloader();
-        //Config config = downloader.getConfig();
-       /* config.setMaxRetries(0);
-
-        File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
-        //File outputDir = new File(getExternalCacheDir().getPath());
-
-        // async parsing
-        RequestVideoInfo requestVideoInfo = new RequestVideoInfo(videoId)
-                .callback(new YoutubeCallback<VideoInfo>() {
-                    @Override
-                    public void onFinished(VideoInfo videoInfo) {
-
-                        Log.d("TAG", "Finished parsing");
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-
-                        Log.d("TAG", "Error: " + throwable.getMessage());
-                    }
-                })
-                .async();
-        Response<VideoInfo> responseVideoInfo = downloader.getVideoInfo(requestVideoInfo);
-        VideoInfo video = responseVideoInfo.data(); // will block thread
-
-        // get audio formats
-        audioFormats = video.audioFormats();
-
-        // get all videos formats (may contain better quality but without audio)
-        List<VideoFormat> videoFormats = video.videoFormats();*/
 
         Format format = audioFormats.get(positionAudioFormat).getAudioFormat();
 
@@ -230,14 +198,12 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
                // Toast.makeText (getContext(), "Good", Toast.LENGTH_LONG).show();
                 if(mListener != null)
                     mListener.updateList();
-                //onBackPressed();
                 Looper.loop();
             }
         };
         Thread thread = new Thread(runnable);
         thread.start();
     }
-
 
     public void setPermission(){
         // получаем разрешения
@@ -253,7 +219,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         if (WRITE_FILES_GRANTED) {
             String link = edxLink.getText().toString();
             if(link.length() > 0) {
-                downloadAsync(link.replace("https://youtu.be/", ""));
+                downloadAsync();
             }
         }
     }
@@ -264,7 +230,6 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         positionAudioFormat = position;
     }
-
 
     // создаем сам интерфейс и указываем метод и передаваемые им аргументы
     // View на котором произошло событие и позиция этого View

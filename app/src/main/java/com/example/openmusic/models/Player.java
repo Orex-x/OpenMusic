@@ -1,10 +1,11 @@
-package com.example.openmusic;
+package com.example.openmusic.models;
 
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Environment;
-import android.view.View;
+
+import com.example.openmusic.models.Song;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -4,28 +4,26 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.example.openmusic.MainActivity;
-import com.example.openmusic.Player;
+import com.example.openmusic.models.Player;
 import com.example.openmusic.PlayerController;
 import com.example.openmusic.R;
-import com.example.openmusic.Song;
+import com.example.openmusic.models.Song;
 
 
 public class SongControlFragment extends Fragment implements Player.OnPlayerListener{
 
-    Button btnBack, btnPause, btnNext;
+    ImageButton btnBack, btnPause, btnNext;
     SeekBar seekBar;
-    TextView elapsed, remaining, txtSongName, txtSongAuthor;
+    TextView elapsed, txtSongName, txtSongAuthor;
     Player player;
     Handler seekHandler = new Handler();
 
@@ -44,7 +42,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
         btnNext = v.findViewById(R.id.btnNext);
         seekBar = v.findViewById(R.id.seekBar);
         elapsed = v.findViewById(R.id.elapsed);
-        remaining = v.findViewById(R.id.remaining);
+       // remaining = v.findViewById(R.id.remaining);
         txtSongName = v.findViewById(R.id.txtSongName);
         txtSongAuthor = v.findViewById(R.id.txtSongAuthor);
 
@@ -134,7 +132,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
             long currentDuration = PlayerController.getPlayer().getPlayer().getCurrentPosition();
 
             // Displaying Total Duration time
-             remaining.setText(""+ milliSecondsToTimer(totalDuration-currentDuration));
+           //  remaining.setText(""+ milliSecondsToTimer(totalDuration-currentDuration));
             // Displaying time completed playing
             elapsed.setText(""+ milliSecondsToTimer(currentDuration));
 

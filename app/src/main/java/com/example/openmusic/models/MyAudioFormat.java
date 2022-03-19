@@ -1,4 +1,4 @@
-package com.example.openmusic;
+package com.example.openmusic.models;
 
 import com.github.kiulian.downloader.model.videos.formats.AudioFormat;
 

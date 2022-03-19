@@ -1,5 +1,6 @@
 package com.example.openmusic;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -13,8 +14,8 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -32,6 +33,10 @@ import com.example.openmusic.adpters.SongAdapter;
 import com.example.openmusic.fragments.DownloadSongFragment;
 import com.example.openmusic.fragments.SongControlFragment;
 import com.example.openmusic.fragments.SongListFragment;
+import com.example.openmusic.models.Player;
+import com.example.openmusic.models.Song;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
 
 public class MainActivity extends AppCompatActivity implements
         SongAdapter.OnCardClickListener,
@@ -52,9 +57,9 @@ public class MainActivity extends AppCompatActivity implements
     private static final int REQUEST_CODE_READ_FILES = 1;
     private static boolean READ_FILES_GRANTED = false;
 
-    Button btnHome, btnAdd, btnPlaylists;
-    private Handler handler;
     Handler permissionHandler = new Handler();
+
+    BottomNavigationView bottomNavigationView;
 
 
     @Override
@@ -73,6 +78,32 @@ public class MainActivity extends AppCompatActivity implements
         downloadSongFragment = new DownloadSongFragment();
         downloadSongFragment.setSongListFragmentListener(this);
 
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+
+        bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                switch (item.getItemId()){
+                    case R.id.page_1:{
+                        FragmentManager fragmentManager = getSupportFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                        fragmentTransaction.replace(R.id.fragment, songListFragment);
+                        fragmentTransaction.commit();
+                        return true;
+                    }
+                    case R.id.page_2:{
+                        FragmentManager fragmentManager = getSupportFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                        fragmentTransaction.replace(R.id.fragment, downloadSongFragment);
+                        fragmentTransaction.commit();
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        });
+
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.fragment, songListFragment);
@@ -85,16 +116,6 @@ public class MainActivity extends AppCompatActivity implements
 
         adapter = new SongAdapter(this, player.getSongs());
         adapter.setOnCardClickListener(this);
-
-        btnHome = findViewById(R.id.btnHome);
-        btnAdd = findViewById(R.id.btnAdd);
-        btnPlaylists = findViewById(R.id.btnPlaylists);
-
-        btnHome.setOnClickListener(this::setHomeFragment);
-        btnAdd.setOnClickListener(this::setAddFragment);
-        btnPlaylists.setOnClickListener(this::setPlaylistsFragment);
-
-
 
         setPermission();
     }

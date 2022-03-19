@@ -4,7 +4,6 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -12,12 +11,9 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.openmusic.MyAudioFormat;
+import com.example.openmusic.models.MyAudioFormat;
 import com.example.openmusic.R;
-import com.example.openmusic.Song;
-import com.github.kiulian.downloader.model.videos.formats.AudioFormat;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MusicFormatAdapter extends RecyclerView.Adapter<MusicFormatAdapter.ViewHolder>{

@@ -13,7 +13,7 @@
       android:id="@+id/fragment"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
-      android:layout_marginBottom="160dp"
+      android:layout_marginBottom="150dp"
       app:layout_constraintBottom_toBottomOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintStart_toStartOf="parent" />
@@ -21,42 +21,19 @@
     <FrameLayout
         android:id="@+id/fragmentControlSong"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="90dp"
         android:layout_marginBottom="60dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <LinearLayout
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:orientation="horizontal"
+        android:layout_height="60dp"
+        app:itemTextColor="@color/black"
+        android:background="@color/fragment_back"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <Button
-            android:id="@+id/btnHome"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            style="@style/ButtonStyle"
-            android:layout_weight="1"
-            android:text="Home" />
-        <Button
-            android:id="@+id/btnAdd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            style="@style/ButtonStyle"
-            android:layout_weight="1"
-            android:text="Add" />
-        <Button
-            android:id="@+id/btnPlaylists"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            style="@style/ButtonStyle"
-            android:layout_weight="1"
-            android:text="Playlists" />
-
-    </LinearLayout>
+        app:menu="@menu/bottom_navigation_menu" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,4 +1,4 @@
-package com.example.openmusic;
+package com.example.openmusic.models;
 
 public class Song {
     private long id;
