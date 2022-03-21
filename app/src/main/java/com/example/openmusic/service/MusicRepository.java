@@ -93,7 +93,8 @@ public class MusicRepository {
        ArrayList<Song> result_search = new ArrayList<>();
         for (Song song :
                 songs) {
-            if(song.getDisplayName().toLowerCase(Locale.ROOT).contains(search.toLowerCase(Locale.ROOT)))
+            if(song.getDisplayName().toLowerCase(Locale.ROOT).contains(search.toLowerCase(Locale.ROOT))
+            || song.getTitle().toLowerCase(Locale.ROOT).contains(search.toLowerCase(Locale.ROOT)))
                 result_search.add(song);
         }
         songs.clear();

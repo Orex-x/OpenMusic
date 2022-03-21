@@ -21,6 +21,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -74,7 +76,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
     RecyclerAdapterTest adapter;
     private int positionAudioFormat = 0;
 
-
+    Animation animScale;
     final Handler h = new Handler();
 
     @Override
@@ -92,6 +94,8 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         adapter = new RecyclerAdapterTest(getContext(), audioFormats);
         adapter.setOnItemClickListener(this);
         list_format.setAdapter(adapter);
+
+        animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
 
 
         edxLink.addTextChangedListener(new TextWatcher() {
@@ -139,6 +143,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void ButtonClickDownload(View view){
+        view.startAnimation(animScale);
         setPermission();
     }
 

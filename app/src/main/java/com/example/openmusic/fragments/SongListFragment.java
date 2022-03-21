@@ -10,6 +10,8 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -26,6 +28,7 @@ public class SongListFragment extends Fragment {
     ImageButton btnUpdateList;
     Player player;
     EditText edtSearch;
+    Animation animScale;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -37,6 +40,8 @@ public class SongListFragment extends Fragment {
         btnUpdateList = v.findViewById(R.id.btnUpdateList);
         edtSearch = v.findViewById(R.id.edtSearch);
 
+        animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
+
         if(mListener != null)
             mListener.setAdapter(lvMusics);
 
@@ -44,6 +49,7 @@ public class SongListFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 if(mListener != null){
+                    v.startAnimation(animScale);
                     String search = edtSearch.getText().toString();
                     mListener.search(search);
 

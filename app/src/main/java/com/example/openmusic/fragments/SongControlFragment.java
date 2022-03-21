@@ -9,6 +9,8 @@ import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -28,6 +30,8 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
     Handler seekHandler = new Handler();
 
 
+    Animation animScale;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -45,6 +49,8 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
        // remaining = v.findViewById(R.id.remaining);
         txtSongName = v.findViewById(R.id.txtSongName);
         txtSongAuthor = v.findViewById(R.id.txtSongAuthor);
+
+        animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
 
         btnBack.setOnClickListener(this::clickBack);
         btnPause.setOnClickListener(this::clickPause);
@@ -71,14 +77,22 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
 
 
     public void clickBack(View view){
+        view.startAnimation(animScale);
         mListener.clickBack();
     }
 
     public void clickPause(View view){
+        if(player.getPlayer().isPlaying()){
+            btnPause.setImageResource(R.drawable.ic_baseline_play_arrow_24);
+        }else{
+            btnPause.setImageResource(R.drawable.ic_baseline_pause_24);
+        }
+        view.startAnimation(animScale);
         mListener.clickPause();
     }
 
     public void clickNext(View view){
+        view.startAnimation(animScale);
         mListener.clickNext();
     }
 

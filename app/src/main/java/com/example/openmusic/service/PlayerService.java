@@ -59,6 +59,7 @@ public class PlayerService extends Service {
 
 
     Player player;
+    private int current_song = 0;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -122,7 +123,8 @@ public class PlayerService extends Service {
 
             startService(new Intent(getApplicationContext(), PlayerService.class));
 
-            if(currentState == PlaybackStateCompat.STATE_PAUSED){
+            if(currentState == PlaybackStateCompat.STATE_PAUSED &&
+                    current_song == musicRepository.getCurrentItemIndex()){
                 player.start();
             }else{
                 Song song = musicRepository.getCurrent();
@@ -157,7 +159,7 @@ public class PlayerService extends Service {
 
         @Override
         public void onPause() {
-            if(currentState == PlaybackStateCompat.STATE_STOPPED){
+            if(currentState == PlaybackStateCompat.STATE_PAUSED || currentState == PlaybackStateCompat.STATE_STOPPED){
                 onPlay();
             }else{
                 player.pause();
@@ -219,6 +221,7 @@ public class PlayerService extends Service {
 
         private void prepareToPlay(Song song) {
             player.playSong(song, getApplicationContext());
+            current_song = musicRepository.getCurrentItemIndex();
         }
 
         private void updateMetadataFromTrack(Song song) {
