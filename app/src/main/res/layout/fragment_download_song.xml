@@ -7,17 +7,17 @@
     tools:context=".fragments.DownloadSongFragment">
 
 
-    <Button
+    <ImageButton
         android:id="@+id/btnDownload"
         style="@style/ButtonStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        android:text="Download"
+        android:src="@drawable/ic_baseline_arrow_downward_24"
+        android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <EditText
         android:id="@+id/edxLink"
@@ -26,14 +26,25 @@
         android:layout_marginTop="16dp"
         android:ems="10"
         android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
+        android:layout_marginRight="26dp"
         android:inputType="textPersonName"
         android:hint="Link..."
+        android:textSize="24sp"
         style="@style/EditEditStyle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btnClear_link"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:background="@null"
+        android:src="@drawable/ic_baseline_clear_24"
+        app:layout_constraintBottom_toBottomOf="@+id/edxLink"
+        app:layout_constraintStart_toEndOf="@+id/edxLink"
+        app:layout_constraintTop_toTopOf="@+id/edxLink" />
 
     <EditText
         android:id="@+id/edxName"
@@ -41,27 +52,39 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginTop="76dp"
-        android:layout_marginRight="16dp"
+        android:layout_marginRight="26dp"
         android:ems="10"
         android:maxLength="30"
         android:hint="Name"
+        android:textSize="24sp"
         style="@style/EditEditStyle"
         android:inputType="textPersonName"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <ImageButton
+        android:id="@+id/btnClear_name"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:background="@null"
+        android:src="@drawable/ic_baseline_clear_24"
+        app:layout_constraintBottom_toBottomOf="@+id/edxName"
+        app:layout_constraintStart_toEndOf="@+id/edxName"
+        app:layout_constraintTop_toTopOf="@+id/edxName"
+        app:layout_constraintVertical_bias="0.475" />
+
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginRight="16dp"
+        android:layout_marginRight="78dp"
         android:layout_marginLeft="16dp"
-        app:layout_constraintBottom_toTopOf="@+id/btnDownload"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintBottom_toBottomOf="@+id/btnDownload"
+        app:layout_constraintEnd_toStartOf="@+id/btnDownload"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/btnDownload" />
 
     <TextView
         android:id="@+id/txtProgress"
@@ -70,6 +93,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginBottom="8dp"
         android:text="Downloaded 0%"
+        android:textSize="18sp"
         style="@style/TextViewStyle"
         app:layout_constraintBottom_toTopOf="@+id/progressBar"
         app:layout_constraintStart_toStartOf="parent" />
@@ -81,6 +105,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/edxName" />
+
 
 
 

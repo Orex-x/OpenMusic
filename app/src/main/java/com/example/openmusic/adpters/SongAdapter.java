@@ -48,8 +48,8 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         Song song = songs.get(position);
-        if(song.getTitle().length() > 50){
-            holder.txtListItem.setText(song.getTitle().substring(0,50) + "...");
+        if(song.getTitle().length() > 30){
+            holder.txtListItem.setText(song.getTitle().substring(0,30) + "...");
         }else
             holder.txtListItem.setText(song.getTitle());
     }

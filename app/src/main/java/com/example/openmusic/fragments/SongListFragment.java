@@ -91,6 +91,4 @@ public class SongListFragment extends Fragment {
     public void setSongListFragmentListener(SongListFragmentListener listener) {
         mListener = listener;
     }
-
-
 }

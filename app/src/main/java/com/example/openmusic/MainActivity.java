@@ -173,14 +173,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private Runnable permissionGranted = new Runnable() {
         public void run() {
-            //getSongList();
             musicRepository.update(getApplicationContext());
-            //сортировка в алфавитном порядке
-            Collections.sort(musicRepository.getSongs(), new Comparator<Song>(){
-                public int compare(Song a, Song b){
-                    return a.getTitle().compareTo(b.getTitle());
-                }
-            });
             adapter.notifyDataSetChanged();
         }
     };
@@ -234,7 +227,10 @@ public class MainActivity extends AppCompatActivity implements
             file.delete();
             musicRepository.getSongs().remove(pos);
             if(pos == musicRepository.getCurrentItemIndex()){
-                onSongClick(view, pos);
+                if(pos == musicRepository.getSongs().size())
+                    onSongClick(view, pos - 1);
+                else
+                    onSongClick(view, pos);
             }
             Toast.makeText(MainActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
             adapter.notifyDataSetChanged();
@@ -296,6 +292,9 @@ public class MainActivity extends AppCompatActivity implements
         if (mediaController != null)
             mediaController.getTransportControls().seekTo(progress);
     }
+
+
+
 }
 
 

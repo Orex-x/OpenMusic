@@ -15,13 +15,15 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.example.openmusic.MainActivity;
 import com.example.openmusic.models.Player;
 import com.example.openmusic.PlayerController;
 import com.example.openmusic.R;
 import com.example.openmusic.models.Song;
+import com.example.openmusic.service.PlayerService;
 
 
-public class SongControlFragment extends Fragment implements Player.OnPlayerListener{
+public class SongControlFragment extends Fragment implements Player.OnPlayerListener , PlayerService.MainActivityListener {
 
     ImageButton btnBack, btnPause, btnNext;
     SeekBar seekBar;
@@ -29,7 +31,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
     Player player;
     Handler seekHandler = new Handler();
 
-
+    PlayerService service;
     Animation animScale;
 
     @Override
@@ -38,6 +40,8 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
         View v = inflater.inflate(R.layout.fragment_song_control, container, false);
 
         player = PlayerController.getPlayer();
+        service = new PlayerService();
+        service.setMainActivityListener(this);
 
         player.setOnPlayerListener(this);
 
@@ -46,7 +50,6 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
         btnNext = v.findViewById(R.id.btnNext);
         seekBar = v.findViewById(R.id.seekBar);
         elapsed = v.findViewById(R.id.elapsed);
-       // remaining = v.findViewById(R.id.remaining);
         txtSongName = v.findViewById(R.id.txtSongName);
         txtSongAuthor = v.findViewById(R.id.txtSongAuthor);
 
@@ -82,11 +85,6 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
     }
 
     public void clickPause(View view){
-        if(player.getPlayer().isPlaying()){
-            btnPause.setImageResource(R.drawable.ic_baseline_play_arrow_24);
-        }else{
-            btnPause.setImageResource(R.drawable.ic_baseline_pause_24);
-        }
         view.startAnimation(animScale);
         mListener.clickPause();
     }
@@ -120,9 +118,26 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
         seekHandler.postDelayed(updateSeekBar, 15);
 
         txtSongName.setText(song.getTitle());
-        txtSongAuthor.setText(song.getArtist());
+        if(song.getArtist() != null){
+            if(song.getArtist().length() > 30){
+                txtSongAuthor.setText(song.getArtist().substring(0,30) + "...");
+            }else{
+                txtSongAuthor.setText(song.getArtist());
+            }
+        }else
+            txtSongAuthor.setText(song.getArtist());
+
+
     }
 
+    @Override
+    public void changeImageResourceBtnPause() {
+        if(player.getPlayer().isPlaying()){
+            btnPause.setImageResource(R.drawable.ic_baseline_pause_24);
+        }else{
+            btnPause.setImageResource(R.drawable.ic_baseline_play_arrow_24);
+        }
+    }
 
     // создаем сам интерфейс и указываем метод и передаваемые им аргументы
     // View на котором произошло событие и позиция этого View

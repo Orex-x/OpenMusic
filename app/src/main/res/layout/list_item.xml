@@ -13,9 +13,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
-        android:fontFamily="@font/days"
         android:text="Song name"
-        android:textSize="12sp"
+        android:textSize="24sp"
+        style="@style/TextViewStyle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/imageView"
         app:layout_constraintTop_toTopOf="parent" />

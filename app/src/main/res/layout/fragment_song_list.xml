@@ -20,6 +20,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="3"
             android:ems="10"
+            android:textSize="24sp"
+            style="@style/EditEditStyle"
             android:layout_marginLeft="8dp"
             android:inputType="textPersonName"
             android:hint="Search..." />

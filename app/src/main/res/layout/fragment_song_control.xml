@@ -12,19 +12,48 @@
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:orientation="horizontal"
-        android:layout_marginRight="8dp"
-        android:layout_marginLeft="8dp"
         android:layout_marginBottom="4dp"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:orientation="horizontal"
 
-        <SeekBar
-            android:id="@+id/seekBar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            android:layout_weight="40" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:layout_editor_absoluteX="8dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="80"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtSongAuthor"
+                style="@style/TextViewStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="asd"
+                android:textSize="18dp"
+                android:layout_marginLeft="16dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <SeekBar
+                android:id="@+id/seekBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/elapsed"
+                style="@style/TextViewStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="16dp"
+                android:text="0:00"
+                android:textSize="14dp"
+                app:layout_constraintBottom_toTopOf="@+id/seekBar"
+                app:layout_constraintEnd_toEndOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <ImageButton
             android:id="@+id/btnBack"
@@ -39,8 +68,9 @@
             style="@style/ButtonStyle"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:layout_weight="1"
             android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_weight="1"
             android:src="@drawable/ic_baseline_pause_24" />
 
         <ImageButton
@@ -48,7 +78,7 @@
             style="@style/ButtonStyle"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:layout_marginLeft="8dp"
+            android:layout_marginRight="4dp"
             android:layout_weight="1"
             android:src="@drawable/ic_baseline_skip_next_24" />
     </LinearLayout>
@@ -58,30 +88,10 @@
         style="@style/TextViewStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=""
+        android:text="asd"
         android:layout_marginLeft="16dp"
-        android:layout_marginBottom="2dp"
-        app:layout_constraintBottom_toTopOf="@+id/txtSongAuthor"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/txtSongAuthor"
-        style="@style/TextViewStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
-        android:text=""
+        android:textSize="18dp"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/elapsed"
-        style="@style/TextViewStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0:00"
-        app:layout_constraintBottom_toTopOf="@+id/linearLayout"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <!--<TextView

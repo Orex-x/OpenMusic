@@ -26,6 +26,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -66,7 +67,7 @@ import cz.msebera.android.httpclient.Header;
 public class DownloadSongFragment extends Fragment implements AdapterView.OnItemClickListener{
 
     EditText edxLink, edxName;
-    Button btnDownload;
+    ImageButton btnDownload, btnClear_link, btnClear_name;
     ProgressBar progressBar;
     TextView txtProgress;
     RecyclerView list_format;
@@ -87,6 +88,8 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         edxName = v.findViewById(R.id.edxName);
         txtProgress = v.findViewById(R.id.txtProgress);
         btnDownload = v.findViewById(R.id.btnDownload);
+        btnClear_name = v.findViewById(R.id.btnClear_name);
+        btnClear_link = v.findViewById(R.id.btnClear_link);
         progressBar = v.findViewById(R.id.progressBar);
         list_format = v.findViewById(R.id.list_format);
         list_format.setLayoutManager(new LinearLayoutManager(getContext(),
@@ -97,6 +100,12 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
 
         animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
 
+        btnClear_link.setOnClickListener(v1 -> {
+            edxLink.setText("");
+        });
+        btnClear_name.setOnClickListener(v1 -> {
+            edxName.setText("");
+        });
 
         edxLink.addTextChangedListener(new TextWatcher() {
             @Override

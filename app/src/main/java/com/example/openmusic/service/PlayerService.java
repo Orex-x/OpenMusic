@@ -1,6 +1,8 @@
 package com.example.openmusic.service;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -24,10 +26,12 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.media.session.MediaButtonReceiver;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.openmusic.PlayerController;
 import com.example.openmusic.R;
 import com.example.openmusic.fragments.SongControlFragment;
+import com.example.openmusic.fragments.SongListFragment;
 import com.example.openmusic.models.Player;
 import com.example.openmusic.models.Song;
 
@@ -83,7 +87,8 @@ public class PlayerService extends Service {
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         mediaSession = new MediaSessionCompat(this, "PlayerService");
-        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS
+                | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mediaSession.setCallback(mediaSessionCallback);
 
 
@@ -123,43 +128,25 @@ public class PlayerService extends Service {
 
             startService(new Intent(getApplicationContext(), PlayerService.class));
 
-            if(currentState == PlaybackStateCompat.STATE_PAUSED &&
-                    current_song == musicRepository.getCurrentItemIndex()){
+            if(currentState == PlaybackStateCompat.STATE_PAUSED
+                    && current_song == musicRepository.getCurrentItemIndex()){
                 player.start();
+
             }else{
                 Song song = musicRepository.getCurrent();
                 prepareToPlay(song);
                 updateMetadataFromTrack(song);
             }
-
-
-            if (!audioFocusRequested) {
-                audioFocusRequested = true;
-
-                int audioFocusResult;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    audioFocusResult = audioManager.requestAudioFocus(audioFocusRequest);
-                } else {
-                    audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-                }
-                if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
-                    return;
-            }
-
-            mediaSession.setActive(true); // Сразу после получения фокуса
-
-            registerReceiver(becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
-
-            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
-                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
-            currentState = PlaybackStateCompat.STATE_PLAYING;
-
+            mListener.changeImageResourceBtnPause();
+            setStatePlay();
             refreshNotificationAndForegroundStatus(currentState);
+
         }
 
         @Override
         public void onPause() {
-            if(currentState == PlaybackStateCompat.STATE_PAUSED || currentState == PlaybackStateCompat.STATE_STOPPED){
+            if(currentState == PlaybackStateCompat.STATE_PAUSED
+                    || currentState == PlaybackStateCompat.STATE_STOPPED){
                 onPlay();
             }else{
                 player.pause();
@@ -169,7 +156,7 @@ public class PlayerService extends Service {
 
                 refreshNotificationAndForegroundStatus(currentState);
             }
-
+            mListener.changeImageResourceBtnPause();
         }
 
         @Override
@@ -180,6 +167,7 @@ public class PlayerService extends Service {
 
         @Override
         public void onStop() {
+
             unregisterReceiver(becomingNoisyReceiver);
 
             if (audioFocusRequested) {
@@ -201,26 +189,33 @@ public class PlayerService extends Service {
             refreshNotificationAndForegroundStatus(currentState);
 
             stopSelf();
+            mListener.changeImageResourceBtnPause();
         }
 
         @Override
         public void onSkipToNext() {
             Song song = musicRepository.getNext();
+            setStatePlay();
             refreshNotificationAndForegroundStatus(currentState);
-            prepareToPlay(song);
             updateMetadataFromTrack(song);
+            prepareToPlay(song);
+
         }
 
         @Override
         public void onSkipToPrevious() {
+
             Song song = musicRepository.getPrevious();
+            setStatePlay();
             refreshNotificationAndForegroundStatus(currentState);
-            prepareToPlay(song);
             updateMetadataFromTrack(song);
+            prepareToPlay(song);
+
         }
 
         private void prepareToPlay(Song song) {
             player.playSong(song, getApplicationContext());
+            mListener.changeImageResourceBtnPause();
             current_song = musicRepository.getCurrentItemIndex();
         }
 
@@ -231,7 +226,32 @@ public class PlayerService extends Service {
            // metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, player.getPlayer().getDuration());
             mediaSession.setMetadata(metadataBuilder.build());
         }
+
+        public void setStatePlay(){
+            if (!audioFocusRequested) {
+                audioFocusRequested = true;
+
+                int audioFocusResult;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    audioFocusResult = audioManager.requestAudioFocus(audioFocusRequest);
+                } else {
+                    audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+                }
+                if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+                    return;
+            }
+
+            mediaSession.setActive(true); // Сразу после получения фокуса
+
+            registerReceiver(becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+
+            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
+                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+            currentState = PlaybackStateCompat.STATE_PLAYING;
+        }
     };
+
+
 
     private final BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
         @Override
@@ -263,7 +283,16 @@ public class PlayerService extends Service {
     private void refreshNotificationAndForegroundStatus(int playbackState) {
         switch (playbackState) {
             case PlaybackStateCompat.STATE_PLAYING: {
-                startForeground(NOTIFICATION_ID, getNotification(playbackState));
+                final NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                final Notification notification = getNotification(playbackState);
+                // аля так
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    NotificationChannel nc = new NotificationChannel(NOTIFICATION_DEFAULT_CHANNEL_ID, "PlayerService", NotificationManager.IMPORTANCE_HIGH);
+                    nm.createNotificationChannel(nc);
+                }
+
+                nm.notify(NOTIFICATION_ID, notification);
+                startForeground(NOTIFICATION_ID, notification);
                 break;
             }
             case PlaybackStateCompat.STATE_PAUSED: {
@@ -281,6 +310,7 @@ public class PlayerService extends Service {
 
     private Notification getNotification(int playbackState) {
         NotificationCompat.Builder builder = MediaStyleHelper.from(this, mediaSession);
+
         builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_previous, "previous",
                 MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)));
 
@@ -293,19 +323,41 @@ public class PlayerService extends Service {
 
         builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_next, "next",
                 MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)));
+
         builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                 .setShowActionsInCompactView(1)
                 .setShowCancelButton(true)
                 .setCancelButtonIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this,
                         PlaybackStateCompat.ACTION_STOP))
                 .setMediaSession(mediaSession.getSessionToken())); // setMediaSession требуется для Android Wear
+
         builder.setSmallIcon(R.drawable.ic_group);
         builder.setColor(ContextCompat.getColor(this, R.color.activity_back)); // The whole background (in MediaStyle), not just icon background
         builder.setShowWhen(false);
+
         builder.setPriority(NotificationCompat.PRIORITY_HIGH);
         builder.setOnlyAlertOnce(true);
-        builder.setChannelId(NOTIFICATION_DEFAULT_CHANNEL_ID);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setChannelId(NOTIFICATION_DEFAULT_CHANNEL_ID);
+        }
+
 
         return builder.build();
     }
+
+
+    // создаем поле объекта-колбэка
+    private static MainActivityListener mListener;
+
+    // создаем сам интерфейс и указываем метод и передаваемые им аргументы
+    // View на котором произошло событие и позиция этого View
+    public interface MainActivityListener {
+        void changeImageResourceBtnPause();
+    }
+
+    // метод-сеттер для привязки колбэка к получателю событий
+    public void setMainActivityListener(MainActivityListener listener) {
+        mListener = listener;
+    }
+
 }

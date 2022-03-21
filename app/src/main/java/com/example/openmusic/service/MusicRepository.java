@@ -9,6 +9,8 @@ import android.provider.MediaStore;
 import com.example.openmusic.models.Song;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Locale;
 
 public class MusicRepository {
@@ -84,6 +86,13 @@ public class MusicRepository {
             }
             while (musicCursor.moveToNext());
         }
+
+        //сортировка в алфавитном порядке
+        Collections.sort(songs, new Comparator<Song>(){
+            public int compare(Song a, Song b){
+                return a.getTitle().compareTo(b.getTitle());
+            }
+        });
     }
 
     public void search(String search, Context context) {
