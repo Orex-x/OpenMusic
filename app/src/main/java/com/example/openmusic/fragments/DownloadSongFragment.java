@@ -2,8 +2,10 @@ package com.example.openmusic.fragments;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -24,7 +26,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.alibaba.fastjson.JSONException;
+import com.example.openmusic.LinkParse;
+import com.example.openmusic.api.ApiClient;
 import com.example.openmusic.models.MyAudioFormat;
 import com.example.openmusic.R;
 import com.example.openmusic.adpters.RecyclerAdapterTest;
@@ -38,11 +44,21 @@ import com.github.kiulian.downloader.downloader.response.Response;
 import com.github.kiulian.downloader.model.videos.VideoInfo;
 import com.github.kiulian.downloader.model.videos.formats.AudioFormat;
 import com.github.kiulian.downloader.model.videos.formats.Format;
-import com.github.kiulian.downloader.model.videos.formats.VideoFormat;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.JsonHttpResponseHandler;
+
+import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import cz.msebera.android.httpclient.Header;
 
 
 public class DownloadSongFragment extends Fragment implements AdapterView.OnItemClickListener{
@@ -57,6 +73,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
     List<MyAudioFormat> audioFormats = new ArrayList<>();
     RecyclerAdapterTest adapter;
     private int positionAudioFormat = 0;
+
 
     final Handler h = new Handler();
 
@@ -77,7 +94,6 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         list_format.setAdapter(adapter);
 
 
-
         edxLink.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -87,8 +103,25 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String link = s.toString();
-                if(link.contains("https://youtu.be/") && link.length() == 28){ //28 - link length
-                    requestVideoInfo(link.replace("https://youtu.be/", ""));
+                if(link.contains("youtu.be") && link.length() == 28){ //28 - link length
+                    try {
+                        requestVideoInfo(LinkParse.parseYoutubeLink(link));
+                        list_format.setVisibility(View.VISIBLE);
+                    }catch (Exception e){
+
+                    }
+
+                }else if(link.contains("music.youtube") && link.length() == 45){
+                    //https://music.youtube.com/watch?v=aymh4trStM8
+                   try {
+                       requestVideoInfo(LinkParse.parseYoutubeMusicLink(link));
+                       list_format.setVisibility(View.VISIBLE);
+                   }catch (Exception e){
+
+                   }
+                }
+                else{
+                    list_format.setVisibility(View.GONE);
                 }
             }
 
@@ -104,21 +137,75 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         return v;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void ButtonClickDownload(View view){
         setPermission();
     }
 
 
-    public void YandexDownload(){
 
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void downloadUsingByteArray(Path destination, String link)
+            throws IOException {
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.get(link, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onStart() {
+            }
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] response) {
+                try {
+                    Files.write(destination, response);
+                    if(mListener != null)
+                        mListener.updateList();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] errorResponse, Throwable e) {
+
+            }
+
+            @Override
+            public void onRetry(int retryNo) {
+
+            }
+        });
     }
 
+
+    public void getDownloadLinkByTrackId(final String trackId) throws JSONException {
+        ApiClient.get("GetYSongById?trackId="+trackId, null, new JsonHttpResponseHandler() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                try {
+                    String link = response.getString("link");
+                    String name = response.getString("name");
+
+                    File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
+                    Path path = Paths.get(outputDir.getPath(), name+".mp3");
+
+                    downloadUsingByteArray(path, link);
+
+                } catch (org.json.JSONException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        Toast.makeText(getContext(), "Good", Toast.LENGTH_SHORT).show();
+    }
 
     public void requestVideoInfo(String videoId){
         YoutubeDownloader downloader = new YoutubeDownloader();
         Config config = downloader.getConfig();
         config.setMaxRetries(0);
-
         // async parsing
         RequestVideoInfo requestVideoInfo = new RequestVideoInfo(videoId)
                 .callback(new YoutubeCallback<VideoInfo>() {
@@ -149,13 +236,9 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
 
         }
         adapter.notifyDataSetChanged();
-
-
-        // get all videos formats (may contain better quality but without audio)
-        List<VideoFormat> videoFormats = video.videoFormats();
     }
 
-    public void downloadAsync(){
+    public void downloadYoutubeAsync(){
         YoutubeDownloader downloader = new YoutubeDownloader();
 
         Format format = audioFormats.get(positionAudioFormat).getAudioFormat();
@@ -205,6 +288,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         thread.start();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void setPermission(){
         // получаем разрешения
         int hasReadFilesPermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -219,7 +303,12 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         if (WRITE_FILES_GRANTED) {
             String link = edxLink.getText().toString();
             if(link.length() > 0) {
-                downloadAsync();
+                if(link.contains("music.yandex")){
+                    getDownloadLinkByTrackId(LinkParse.parseYandexLink(link));
+                }
+                if(link.contains("youtu.be") || link.contains("music.youtube")){
+                    downloadYoutubeAsync();
+                }
             }
         }
     }
