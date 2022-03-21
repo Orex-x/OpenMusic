@@ -1,6 +1,7 @@
 package com.example.openmusic;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -10,11 +11,19 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.provider.MediaStore;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -35,6 +44,8 @@ import com.example.openmusic.fragments.SongControlFragment;
 import com.example.openmusic.fragments.SongListFragment;
 import com.example.openmusic.models.Player;
 import com.example.openmusic.models.Song;
+import com.example.openmusic.service.MusicRepository;
+import com.example.openmusic.service.PlayerService;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 
@@ -43,12 +54,9 @@ public class MainActivity extends AppCompatActivity implements
         SongListFragment.SongListFragmentListener,
         SongControlFragment.SongControlFragmentListener,
         DownloadSongFragment.DownloadSongFragmentListener
-
 {
 
     SongAdapter adapter;
-
-    Player player;
 
     private SongListFragment songListFragment;
     private SongControlFragment songControlFragment;
@@ -61,15 +69,56 @@ public class MainActivity extends AppCompatActivity implements
 
     BottomNavigationView bottomNavigationView;
 
+    private PlayerService.PlayerServiceBinder playerServiceBinder;
+    private MediaControllerCompat mediaController;
+    private MediaControllerCompat.Callback callback;
+    private ServiceConnection serviceConnection;
+    private MusicRepository musicRepository;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        musicRepository = MusicRepository.getMusicRepository();
+        musicRepository.update(this);
 
+        callback = new MediaControllerCompat.Callback() {
+            @Override
+            public void onPlaybackStateChanged(PlaybackStateCompat state) {
+                if (state == null)
+                    return;
+            }
 
-        player = PlayerController.getPlayer();
+        };
+
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                playerServiceBinder = (PlayerService.PlayerServiceBinder) service;
+                try {
+                    mediaController = new MediaControllerCompat(MainActivity.this,
+                            playerServiceBinder.getMediaSessionToken());
+                    mediaController.registerCallback(callback);
+                    callback.onPlaybackStateChanged(mediaController.getPlaybackState());
+                }
+                catch (RemoteException e) {
+                    mediaController = null;
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                playerServiceBinder = null;
+                if (mediaController != null) {
+                    mediaController.unregisterCallback(callback);
+                    mediaController = null;
+                }
+            }
+        };
+
+        bindService(new Intent(this, PlayerService.class), serviceConnection, BIND_AUTO_CREATE);
 
         songListFragment = new SongListFragment();
         songListFragment.setSongListFragmentListener(this);
@@ -114,36 +163,20 @@ public class MainActivity extends AppCompatActivity implements
         fragmentTransactionSongControl.commit();
 
 
-        adapter = new SongAdapter(this, player.getSongs());
+        adapter = new SongAdapter(this, musicRepository.getSongs());
         adapter.setOnCardClickListener(this);
 
         setPermission();
     }
 
-    public void setHomeFragment(View view){
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment, songListFragment);
-        fragmentTransaction.commit();
-    }
-
-    public void setAddFragment(View view){
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment, downloadSongFragment);
-        fragmentTransaction.commit();
-    }
-
-    public void setPlaylistsFragment(View view){
-
-    }
 
 
     private Runnable permissionGranted = new Runnable() {
         public void run() {
-            getSongList();
+            //getSongList();
+            musicRepository.update(getApplicationContext());
             //сортировка в алфавитном порядке
-            Collections.sort(player.getSongs(), new Comparator<Song>(){
+            Collections.sort(musicRepository.getSongs(), new Comparator<Song>(){
                 public int compare(Song a, Song b){
                     return a.getTitle().compareTo(b.getTitle());
                 }
@@ -171,44 +204,16 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    public void playSong(int position){
-        player.playSong(position, this);
-    }
-
-    public void getSongList() {
-        player.getSongs().clear();
-        ContentResolver musicResolver = getContentResolver();
-        Uri musicUri =  MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
-        if(musicCursor!=null && musicCursor.moveToFirst()){
-            //get columns
-            int titleColumn = musicCursor.getColumnIndex
-                    (MediaStore.Audio.Media.TITLE);
-            int idColumn = musicCursor.getColumnIndex
-                    (MediaStore.Audio.Media._ID);
-            int artistColumn = musicCursor.getColumnIndex
-                    (MediaStore.Audio.Media.ARTIST);
-            int displayNameColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME);
-            int relativePathColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH);
-
-            //add songs to list
-            do {
-                long thisId = musicCursor.getLong(idColumn);
-                String thisTitle = musicCursor.getString(titleColumn);
-                String thisArtist = musicCursor.getString(artistColumn);
-                String thisDisplayName = musicCursor.getString(displayNameColumn);
-                String thisRelativePath = musicCursor.getString(relativePathColumn);
-                player.getSongs().add(new Song(thisId, thisTitle, thisArtist, thisDisplayName, thisRelativePath));
-            }
-            while (musicCursor.moveToNext());
-        }
-    }
-
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        player.stop();
+        playerServiceBinder = null;
+        if (mediaController != null) {
+            mediaController.unregisterCallback(callback);
+            mediaController = null;
+        }
+        unbindService(serviceConnection);
     }
 
     // Вызывается перед тем, как Активность становится "видимой".
@@ -221,15 +226,15 @@ public class MainActivity extends AppCompatActivity implements
     // метод, который получит события из нашего колбэка
     @Override
     public void onDeleteClick(View view,final int pos) {
-        Song song = player.getSongs().get(pos);
+        Song song = musicRepository.getSongs().get(pos);
         String path = Environment.getExternalStoragePublicDirectory(
                 song.getPath() + song.getDisplayName()).getPath();
         File file = new File(path);
         try{
             file.delete();
-            player.getSongs().remove(pos);
-            if(pos == player.getCurrentSong()){
-                player.nextSong(this);
+            musicRepository.getSongs().remove(pos);
+            if(pos == musicRepository.getCurrentItemIndex()){
+                onSongClick(view, pos);
             }
             Toast.makeText(MainActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
             adapter.notifyDataSetChanged();
@@ -240,7 +245,9 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onSongClick(View view, int position) {
-        playSong(position);
+        musicRepository.setCurrentItemIndex(position);
+        if (mediaController != null)
+            mediaController.getTransportControls().play();
     }
 
     //-----------------------------------LIST SONGS FRAGMENT----------------------------------
@@ -254,6 +261,12 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    public void search(String search) {
+        musicRepository.search(search, this);
+        adapter.notifyDataSetChanged();
+    }
+
+    @Override
     public void updateList() {
         setPermission();
     }
@@ -262,22 +275,26 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void clickBack() {
-        player.backSong(this);
+        if (mediaController != null)
+            mediaController.getTransportControls().skipToPrevious();
     }
 
     @Override
     public void clickPause() {
-        player.pauseSong();
+        if (mediaController != null)
+            mediaController.getTransportControls().pause();
     }
 
     @Override
     public void clickNext() {
-        player.nextSong(this);
+        if (mediaController != null)
+            mediaController.getTransportControls().skipToNext();
     }
 
     @Override
     public void seekTo(int progress) {
-        player.seekTo(progress);
+        if (mediaController != null)
+            mediaController.getTransportControls().seekTo(progress);
     }
 }
 

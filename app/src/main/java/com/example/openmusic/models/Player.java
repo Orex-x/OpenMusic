@@ -34,31 +34,20 @@ public class Player {
         });
     }
 
-    public void setSongs(ArrayList<Song> songs) {
-        this.songs = songs;
-    }
 
     public MediaPlayer getPlayer() {
         return player;
     }
 
-    public int getCurrentSong() {
-        return currentSong;
-    }
 
     public void seekTo(int progress) {
         player.seekTo(progress);
     }
 
-    public ArrayList<Song> getSongs() {
-        return songs;
-    }
 
-    public Song playSong(int position, Context context){
-        Song song = songs.get(position);
-
-        currentSong = position;
-        String path = Environment.getExternalStoragePublicDirectory(song.getPath() + song.getDisplayName()).getPath();
+    public Song playSong(Song song, Context context){
+        String path = Environment.getExternalStoragePublicDirectory(
+                song.getPath() + song.getDisplayName()).getPath();
         Uri uri = Uri.parse(path);
         try {
             //mPlayer.stop();
@@ -76,26 +65,12 @@ public class Player {
         return null;
     }
 
-    public void pauseSong(){
-        if (player.isPlaying())
-            player.pause();
-        else{
-            player.start();
-        }
+    public void pause(){
+        player.pause();
     }
 
-    public void nextSong(Context context){
-        currentSong++;
-        if(currentSong == songs.size())
-            currentSong = 0;
-        playSong(currentSong, context);
-    }
-
-    public void backSong(Context context){
-        currentSong--;
-        if(currentSong == -1)
-            currentSong = songs.size() - 1;
-        playSong(currentSong, context);
+    public void start(){
+        player.start();
     }
 
     public void stop(){

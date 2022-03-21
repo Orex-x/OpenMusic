@@ -8,6 +8,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.openmusic.R;
@@ -69,32 +70,21 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
         final TextView txtListItem;
         final Button btnDelete;
         final ImageView imageView;
+        final ConstraintLayout layout;
 
         ViewHolder(View view){
             super(view);
             txtListItem = view.findViewById(R.id.txtListItem);
-            txtListItem.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    int position = getAdapterPosition();
-                    mListener.onSongClick(v, position);
-                }
-            });
             btnDelete = view.findViewById(R.id.btnDelete);
-            btnDelete.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    int position = getAdapterPosition();
-                    mListener.onDeleteClick(v, position);
-                }
-            });
             imageView = view.findViewById(R.id.imageView);
-            imageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    int position = getAdapterPosition();
-                    mListener.onSongClick(v, position);
-                }
+            layout = view.findViewById(R.id.layout_song_item);
+            layout.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                mListener.onSongClick(v, position);
+            });
+            btnDelete.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                mListener.onDeleteClick(v, position);
             });
         }
     }
