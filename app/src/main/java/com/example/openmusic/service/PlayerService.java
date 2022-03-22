@@ -1,10 +1,15 @@
 package com.example.openmusic.service;
 
+import static android.service.controls.ControlsProviderService.TAG;
+
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -19,6 +24,8 @@ import android.os.IBinder;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
+import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -65,6 +72,7 @@ public class PlayerService extends Service {
     Player player;
     private int current_song = 0;
 
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate() {
@@ -86,7 +94,18 @@ public class PlayerService extends Service {
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
-        mediaSession = new MediaSessionCompat(this, "PlayerService");
+
+        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this,
+                0, mediaButtonIntent,
+                PendingIntent.FLAG_IMMUTABLE
+        );
+
+        mediaSession = new MediaSessionCompat(this, "PlayerService", null, pendingIntent);
+
+       // mediaSession = new MediaSessionCompat(this, "PlayerService");
+
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS
                 | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mediaSession.setCallback(mediaSessionCallback);
@@ -308,26 +327,58 @@ public class PlayerService extends Service {
         }
     }
 
+
+    public PendingIntent myBuildMediaButtonPendingIntent(Context context,
+                                                         @PlaybackStateCompat.MediaKeyAction long action){
+        @SuppressLint("RestrictedApi")
+        ComponentName mbrComponent = MediaButtonReceiver.getMediaButtonReceiverComponent(context);
+        if (mbrComponent == null) {
+            Log.w(TAG, "A unique media button receiver could not be found in the given context, so "
+                    + "couldn't build a pending intent.");
+            return null;
+        }
+        return myBuildMediaButtonPendingIntent(context, mbrComponent, action);
+    }
+    public PendingIntent myBuildMediaButtonPendingIntent(Context context, ComponentName mbrComponent,
+                                                         @PlaybackStateCompat.MediaKeyAction long action){
+        if (mbrComponent == null) {
+            Log.w(TAG, "The component name of media button receiver should be provided.");
+            return null;
+        }
+        int keyCode = PlaybackStateCompat.toKeyCode(action);
+        if (keyCode == KeyEvent.KEYCODE_UNKNOWN) {
+            Log.w(TAG,
+                    "Cannot build a media button pending intent with the given action: " + action);
+            return null;
+        }
+        Intent intent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        intent.setComponent(mbrComponent);
+        intent.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, keyCode));
+        return PendingIntent.getBroadcast(context, keyCode, intent, PendingIntent.FLAG_IMMUTABLE);
+    }
+
     private Notification getNotification(int playbackState) {
         NotificationCompat.Builder builder = MediaStyleHelper.from(this, mediaSession);
 
+
         builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_previous, "previous",
-                MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)));
+                myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)));
 
         if (playbackState == PlaybackStateCompat.STATE_PLAYING)
             builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_pause, "pause",
-                    MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
+                    myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
         else
             builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_play, "play",
-                    MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
+                    myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
 
         builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_next, "next",
-                MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)));
+                myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)));
+
 
         builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                 .setShowActionsInCompactView(1)
                 .setShowCancelButton(true)
-                .setCancelButtonIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this,
+                .setCancelButtonIntent(myBuildMediaButtonPendingIntent(this,
                         PlaybackStateCompat.ACTION_STOP))
                 .setMediaSession(mediaSession.getSessionToken())); // setMediaSession требуется для Android Wear
 

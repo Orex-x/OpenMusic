@@ -154,7 +154,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
     public void ButtonClickDownload(View view){
         view.startAnimation(animScale);
         setPermission();
-    }
+     }
 
 
 

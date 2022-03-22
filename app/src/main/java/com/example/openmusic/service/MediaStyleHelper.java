@@ -1,6 +1,8 @@
 package com.example.openmusic.service;
 
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
@@ -24,6 +26,14 @@ public class MediaStyleHelper {
         MediaMetadataCompat mediaMetadata = controller.getMetadata();
         MediaDescriptionCompat description = mediaMetadata.getDescription();
 
+
+        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                0, mediaButtonIntent,
+                PendingIntent.FLAG_IMMUTABLE
+        );
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
         builder
                 .setContentTitle(description.getTitle())
@@ -32,8 +42,19 @@ public class MediaStyleHelper {
                 .setLargeIcon(description.getIconBitmap())
                 .setContentIntent(controller.getSessionActivity())
                 .setDeleteIntent(
-                        MediaButtonReceiver.buildMediaButtonPendingIntent(context, PlaybackStateCompat.ACTION_STOP))
+                        pendingIntent)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+
+       /* NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+        builder
+                .setContentTitle(description.getTitle())
+                .setContentText(description.getSubtitle())
+                .setSubText(description.getDescription())
+                .setLargeIcon(description.getIconBitmap())
+                .setContentIntent(controller.getSessionActivity())
+                .setDeleteIntent(
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(context, PlaybackStateCompat.ACTION_STOP))
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);*/
         return builder;
     }
 }
