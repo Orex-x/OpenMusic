@@ -33,11 +33,13 @@ import android.widget.Toast;
 import com.alibaba.fastjson.JSONException;
 import com.example.openmusic.LinkParse;
 import com.example.openmusic.api.ApiClient;
+import com.example.openmusic.downloaders.DownloaderListener;
+import com.example.openmusic.downloaders.YandexDownloader;
+import com.example.openmusic.downloaders.YoutubeDownloader;
 import com.example.openmusic.models.MyAudioFormat;
 import com.example.openmusic.R;
 import com.example.openmusic.adpters.MusicFormatAdapter;
 import com.github.kiulian.downloader.Config;
-import com.github.kiulian.downloader.YoutubeDownloader;
 import com.github.kiulian.downloader.downloader.YoutubeCallback;
 import com.github.kiulian.downloader.downloader.YoutubeProgressCallback;
 import com.github.kiulian.downloader.downloader.request.RequestVideoFileDownload;
@@ -63,7 +65,9 @@ import java.util.List;
 import cz.msebera.android.httpclient.Header;
 
 
-public class DownloadSongFragment extends Fragment implements AdapterView.OnItemClickListener{
+public class DownloadSongFragment extends Fragment implements
+        AdapterView.OnItemClickListener,
+        DownloaderListener {
 
     EditText edxLink, edxName;
     ImageButton btnDownload, btnClear_link, btnClear_name;
@@ -72,12 +76,18 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
     RecyclerView list_format;
     private static final int REQUEST_CODE_WRITE_FILES = 2;
     private static boolean WRITE_FILES_GRANTED = false;
+
     List<MyAudioFormat> audioFormats = new ArrayList<>();
-    MusicFormatAdapter adapter;
     private int positionAudioFormat = 0;
 
+    MusicFormatAdapter adapter;
+
     Animation animScale;
-    final Handler h = new Handler();
+    Handler handler = new Handler();
+
+
+    YandexDownloader yandexDownloader;
+    YoutubeDownloader youtubeDownloader;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -93,6 +103,12 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         list_format = v.findViewById(R.id.list_format);
         list_format.setLayoutManager(new LinearLayoutManager(getContext(),
                 RecyclerView.VERTICAL, false));
+
+        youtubeDownloader = new YoutubeDownloader();
+        youtubeDownloader.setDownloaderListener(this);
+        yandexDownloader = new YandexDownloader();
+        yandexDownloader.setDownloaderListener(this);
+
         adapter = new MusicFormatAdapter(getContext(), audioFormats);
         adapter.setOnItemClickListener(this);
         list_format.setAdapter(adapter);
@@ -117,7 +133,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
                 String link = s.toString();
                 if(link.contains("youtu.be") && link.length() == 28){ //28 - link length
                     try {
-                        requestVideoInfo(LinkParse.parseYoutubeLink(link));
+                        changeListMyAudioFormat(LinkParse.parseYoutubeLink(link));
                         list_format.setVisibility(View.VISIBLE);
                     }catch (Exception e){
 
@@ -126,7 +142,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
                 }else if(link.contains("music.youtube") && link.length() == 45){
                     //https://music.youtube.com/watch?v=aymh4trStM8
                    try {
-                       requestVideoInfo(LinkParse.parseYoutubeMusicLink(link));
+                       changeListMyAudioFormat(LinkParse.parseYoutubeMusicLink(link));
                        list_format.setVisibility(View.VISIBLE);
                    }catch (Exception e){
 
@@ -145,8 +161,19 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         progressBar.setMax(100);
         btnDownload.setOnClickListener(this::ButtonClickDownload);
 
-
         return v;
+    }
+
+    public void changeListMyAudioFormat(String link){
+        List<AudioFormat> list = youtubeDownloader.requestVideoInfo(link);
+        audioFormats.clear();
+        for (AudioFormat af : list) {
+            if(!af.extension().value().equals("weba")){
+                audioFormats.add(new MyAudioFormat(af, false));
+            }
+
+        }
+        adapter.notifyDataSetChanged();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -156,150 +183,6 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
      }
 
 
-
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public void downloadUsingByteArray(Path destination, String link)
-            throws IOException {
-
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.get(link, new AsyncHttpResponseHandler() {
-
-            @Override
-            public void onStart() {
-            }
-
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] response) {
-                try {
-                    Files.write(destination, response);
-                    if(mListener != null)
-                        mListener.updateList();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] errorResponse, Throwable e) {
-
-            }
-
-            @Override
-            public void onRetry(int retryNo) {
-
-            }
-        });
-    }
-
-
-    public void getDownloadLinkByTrackId(final String trackId) throws JSONException {
-        ApiClient.get("GetYSongById?trackId="+trackId, null, new JsonHttpResponseHandler() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                try {
-                    String link = response.getString("link");
-                    String name = response.getString("name");
-
-                    File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
-                    Path path = Paths.get(outputDir.getPath(), name+".mp3");
-
-                    downloadUsingByteArray(path, link);
-
-                } catch (org.json.JSONException | IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        Toast.makeText(getContext(), "Good", Toast.LENGTH_SHORT).show();
-    }
-
-    public void requestVideoInfo(String videoId){
-        YoutubeDownloader downloader = new YoutubeDownloader();
-        Config config = downloader.getConfig();
-        config.setMaxRetries(0);
-        // async parsing
-        RequestVideoInfo requestVideoInfo = new RequestVideoInfo(videoId)
-                .callback(new YoutubeCallback<VideoInfo>() {
-                    @Override
-                    public void onFinished(VideoInfo videoInfo) {
-
-                        Log.d("TAG", "Finished parsing");
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-
-                        Log.d("TAG", "Error: " + throwable.getMessage());
-                    }
-                })
-                .async();
-        Response<VideoInfo> responseVideoInfo = downloader.getVideoInfo(requestVideoInfo);
-        VideoInfo video = responseVideoInfo.data(); // will block thread
-
-        // get audio formats
-        List<AudioFormat> audioFormats = video.audioFormats();
-        this.audioFormats.clear();
-        for (AudioFormat af :
-                audioFormats) {
-            if(!af.extension().value().equals("weba")){
-                this.audioFormats.add(new MyAudioFormat(af, false));
-            }
-
-        }
-        adapter.notifyDataSetChanged();
-    }
-
-    public void downloadYoutubeAsync(){
-        YoutubeDownloader downloader = new YoutubeDownloader();
-
-        Format format = audioFormats.get(positionAudioFormat).getAudioFormat();
-
-        File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
-
-        // async downloading with callback
-        RequestVideoFileDownload request = new RequestVideoFileDownload(format)
-                .callback(new YoutubeProgressCallback<File>() {
-                    @Override
-                    public void onDownloading(int progress) {
-                        System.out.printf("Downloaded %d%%\n", progress);
-                        txtProgress.setText("Downloaded " + progress + "%");
-                        progressBar.setProgress(progress);
-                    }
-
-                    @Override
-                    public void onFinished(File videoInfo) {
-                        System.out.println("Finished file: " + videoInfo);
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        System.out.println("Error: " + throwable.getLocalizedMessage());
-                    }
-                })
-                .saveTo(outputDir)
-                .async();
-        String name = edxName.getText().toString();
-        if(name.length() > 0){
-            request.renameTo(name);
-        }
-
-        Response<File> response = downloader.downloadVideoFile(request);
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                File data = response.data();
-                Looper.prepare();
-               // Toast.makeText (getContext(), "Good", Toast.LENGTH_LONG).show();
-                if(mListener != null)
-                    mListener.updateList();
-                Looper.loop();
-            }
-        };
-        Thread thread = new Thread(runnable);
-        thread.start();
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void setPermission(){
@@ -317,10 +200,11 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
             String link = edxLink.getText().toString();
             if(link.length() > 0) {
                 if(link.contains("music.yandex")){
-                    getDownloadLinkByTrackId(LinkParse.parseYandexLink(link));
+                    yandexDownloader.getDownloadLinkByTrackId(LinkParse.parseYandexLink(link));
                 }
                 if(link.contains("youtu.be") || link.contains("music.youtube")){
-                    downloadYoutubeAsync();
+                    String name = edxName.getText().toString();
+                    youtubeDownloader.downloadYoutubeAsync(name, audioFormats.get(positionAudioFormat).getAudioFormat());
                 }
             }
         }
@@ -333,6 +217,27 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         positionAudioFormat = position;
     }
 
+
+
+    @Override
+    public void setProgress(int progress) {
+         txtProgress.setText("Downloaded " + progress + "%");
+         progressBar.setProgress(progress);
+    }
+
+    @Override
+    public void setProgressCompleted() {
+        progressBar.setProgress(0);
+        txtProgress.setText("Completed");
+    }
+
+    @Override
+    public void updateList() {
+        mListener.updateList();
+    }
+
+
+
     // создаем сам интерфейс и указываем метод и передаваемые им аргументы
     // View на котором произошло событие и позиция этого View
     public interface DownloadSongFragmentListener {
@@ -343,6 +248,4 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
     public void setSongListFragmentListener(DownloadSongFragmentListener listener) {
         mListener = listener;
     }
-
-
 }

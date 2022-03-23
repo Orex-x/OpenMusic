@@ -7,13 +7,10 @@ android {
 
     defaultConfig {
         applicationId "com.example.openmusic"
-        minSdk 14
+        minSdk 21
         targetSdk 31
         versionCode 1
         versionName "1.0"
-
-        vectorDrawables.useSupportLibrary = true
-        multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,7 +31,6 @@ android {
 }
 
 
-
 dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.4.1'
@@ -47,11 +43,8 @@ dependencies {
 
     implementation 'com.github.sealedtx:java-youtube-downloader:3.0.2'
 
-
     implementation 'org.springframework.boot:spring-boot-starter-webflux:2.5.10'
     implementation 'io.netty:netty-tcnative-boringssl-static:2.0.48.Final'
     implementation 'com.loopj.android:android-async-http:1.4.9'
-
-    implementation 'com.android.support:multidex:1.0.3'
 
 }
