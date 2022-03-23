@@ -24,6 +24,7 @@ import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -37,6 +38,8 @@ import java.util.Comparator;
 import android.net.Uri;
 import android.content.ContentResolver;
 import android.database.Cursor;
+
+
 
 import com.example.openmusic.adpters.SongAdapter;
 import com.example.openmusic.fragments.DownloadSongFragment;
@@ -75,11 +78,54 @@ public class MainActivity extends AppCompatActivity implements
     private ServiceConnection serviceConnection;
     private MusicRepository musicRepository;
 
+    private final String SIMPLE_SONG_CONTROL_FRAGMENT_TAG = "SIMPLE_SONG_CONTROL_FRAGMENT_TAG";
+    private final String SIMPLE_SONG_LIST_FRAGMENT_TAG = "SIMPLE_SONG_LIST_FRAGMENT_TAG";
+    private final String SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG = "SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG";
+
+    private String current_fragment = SIMPLE_SONG_LIST_FRAGMENT_TAG;
+
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putString("current_fragment", current_fragment);
+        super.onSaveInstanceState(outState);
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (savedInstanceState != null) { // saved instance state, fragment may exist
+            // look up the instance that already exists by tag
+            songControlFragment = (SongControlFragment)
+                    getSupportFragmentManager().findFragmentByTag(SIMPLE_SONG_CONTROL_FRAGMENT_TAG);
+
+            songListFragment = (SongListFragment)
+                    getSupportFragmentManager().findFragmentByTag(SIMPLE_SONG_LIST_FRAGMENT_TAG);
+
+            downloadSongFragment = (DownloadSongFragment)
+                    getSupportFragmentManager().findFragmentByTag(SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG);
+
+            current_fragment = savedInstanceState.getString("current_fragment");
+        }
+        if (songControlFragment == null) {
+            // only create fragment if they haven't been instantiated already
+            songControlFragment = new SongControlFragment();
+        }
+        if (songListFragment == null) {
+            // only create fragment if they haven't been instantiated already
+            songListFragment = new SongListFragment();
+        }
+        if (downloadSongFragment == null) {
+            // only create fragment if they haven't been instantiated already
+            downloadSongFragment = new DownloadSongFragment();
+        }
+
+        downloadSongFragment.setSongListFragmentListener(this);
+        songControlFragment.setSongControlFragmentListener(this);
+        songListFragment.setSongListFragmentListener(this);
 
         musicRepository = MusicRepository.getMusicRepository();
         musicRepository.update(this);
@@ -97,20 +143,21 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
                 playerServiceBinder = (PlayerService.PlayerServiceBinder) service;
-                try {
-                    mediaController = new MediaControllerCompat(MainActivity.this,
-                            playerServiceBinder.getMediaSessionToken());
-                    mediaController.registerCallback(callback);
-                    callback.onPlaybackStateChanged(mediaController.getPlaybackState());
-                }
-                catch (RemoteException e) {
-                    mediaController = null;
-                }
+                Log.i("TAG_SERVISE", "1");
+                if(playerServiceBinder == null)
+                    Log.i("TAG_NULL", "playerServiceBinder = null");
+                mediaController = Instances.getMediaSessionCompat(MainActivity.this,
+                        playerServiceBinder.getMediaSessionToken());
+
+                mediaController.registerCallback(callback);
+                callback.onPlaybackStateChanged(mediaController.getPlaybackState());
             }
 
             @Override
             public void onServiceDisconnected(ComponentName name) {
                 playerServiceBinder = null;
+                if(playerServiceBinder == null)
+                    Log.i("TAG_NULL", "playerServiceBinder = null");
                 if (mediaController != null) {
                     mediaController.unregisterCallback(callback);
                     mediaController = null;
@@ -119,13 +166,6 @@ public class MainActivity extends AppCompatActivity implements
         };
 
         bindService(new Intent(this, PlayerService.class), serviceConnection, BIND_AUTO_CREATE);
-
-        songListFragment = new SongListFragment();
-        songListFragment.setSongListFragmentListener(this);
-        songControlFragment = new SongControlFragment();
-        songControlFragment.setSongControlFragmentListener(this);
-        downloadSongFragment = new DownloadSongFragment();
-        downloadSongFragment.setSongListFragmentListener(this);
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
@@ -136,17 +176,17 @@ public class MainActivity extends AppCompatActivity implements
                     case R.id.page_1:{
                         FragmentManager fragmentManager = getSupportFragmentManager();
                         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                        fragmentTransaction.hide(downloadSongFragment);
-                        fragmentTransaction.replace(R.id.fragment, songListFragment);
+                        fragmentTransaction.replace(R.id.fragment, songListFragment, SIMPLE_SONG_LIST_FRAGMENT_TAG);
                         fragmentTransaction.commit();
+                        current_fragment = SIMPLE_SONG_LIST_FRAGMENT_TAG;
                         return true;
                     }
                     case R.id.page_2:{
                         FragmentManager fragmentManager = getSupportFragmentManager();
                         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                        fragmentTransaction.hide(songListFragment);
-                        fragmentTransaction.replace(R.id.fragment, downloadSongFragment);
+                        fragmentTransaction.replace(R.id.fragment, downloadSongFragment, SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG);
                         fragmentTransaction.commit();
+                        current_fragment = SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG;
                         return true;
                     }
                 }
@@ -158,14 +198,17 @@ public class MainActivity extends AppCompatActivity implements
         FragmentManager fragmentManager = getSupportFragmentManager();
 
 
-
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.fragment, songListFragment);
+        if(current_fragment.equals(SIMPLE_SONG_LIST_FRAGMENT_TAG)){
+            fragmentTransaction.replace(R.id.fragment, songListFragment, SIMPLE_SONG_LIST_FRAGMENT_TAG);
+        }else if(current_fragment.equals(SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG)){
+            fragmentTransaction.replace(R.id.fragment, downloadSongFragment, SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG);
+        }
         fragmentTransaction.commit();
 
-/*        FragmentTransaction fragmentTransactionSongControl = fragmentManager.beginTransaction();
-        fragmentTransactionSongControl.add(R.id.fragmentControlSong, songControlFragment);
-        fragmentTransactionSongControl.commit();*/
+        FragmentTransaction fragmentTransactionSongControl = fragmentManager.beginTransaction();
+        fragmentTransactionSongControl.replace(R.id.fragmentControlSong, songControlFragment, SIMPLE_SONG_CONTROL_FRAGMENT_TAG);
+        fragmentTransactionSongControl.commit();
 
         adapter = new SongAdapter(this, musicRepository.getSongs());
         adapter.setOnCardClickListener(this);
@@ -302,9 +345,6 @@ public class MainActivity extends AppCompatActivity implements
         if (mediaController != null)
             mediaController.getTransportControls().seekTo(progress);
     }
-
-
-
 }
 
 

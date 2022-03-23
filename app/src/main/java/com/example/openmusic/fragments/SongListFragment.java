@@ -30,11 +30,21 @@ public class SongListFragment extends Fragment {
     EditText edtSearch;
     Animation animScale;
 
+
+    //for saving
+    String searchText;
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putString("searchText", searchText);
+        super.onSaveInstanceState(outState);
+    }
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v =  inflater.inflate(R.layout.fragment_song_list, container, false);
-
         player = PlayerController.getPlayer();
         lvMusics = v.findViewById(R.id.lvMusics);
         btnUpdateList = v.findViewById(R.id.btnUpdateList);
@@ -74,8 +84,18 @@ public class SongListFragment extends Fragment {
 
             }
         });
+
+        if(savedInstanceState != null){
+            searchText = savedInstanceState.getString("searchText");
+
+            if(searchText != null){
+                edtSearch.setText(searchText);
+                //mListener.search(searchText);
+            }
+        }
         return v;
     }
+
 
     // создаем поле объекта-колбэка
     private static SongListFragmentListener mListener;

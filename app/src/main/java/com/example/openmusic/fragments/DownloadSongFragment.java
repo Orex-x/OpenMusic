@@ -83,11 +83,20 @@ public class DownloadSongFragment extends Fragment implements
     MusicFormatAdapter adapter;
 
     Animation animScale;
-    Handler handler = new Handler();
-
 
     YandexDownloader yandexDownloader;
     YoutubeDownloader youtubeDownloader;
+
+    //for saving
+    private String name, link;
+
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putString("name", name);
+        outState.putString("link", link);
+        super.onSaveInstanceState(outState);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -160,6 +169,13 @@ public class DownloadSongFragment extends Fragment implements
 
         progressBar.setMax(100);
         btnDownload.setOnClickListener(this::ButtonClickDownload);
+
+        if(savedInstanceState != null) {
+            name = savedInstanceState.getString("name");
+            link = savedInstanceState.getString("link");
+            edxName.setText(name);
+            edxLink.setText(link);
+        }
 
         return v;
     }
