@@ -3,11 +3,7 @@ package com.example.openmusic.downloaders;
 import android.os.Environment;
 import android.os.Looper;
 import android.util.Log;
-import android.view.View;
-import android.widget.AdapterView;
 
-import com.example.openmusic.fragments.DownloadSongFragment;
-import com.example.openmusic.models.MyAudioFormat;
 import com.github.kiulian.downloader.Config;
 import com.github.kiulian.downloader.downloader.YoutubeCallback;
 import com.github.kiulian.downloader.downloader.YoutubeProgressCallback;
@@ -19,7 +15,6 @@ import com.github.kiulian.downloader.model.videos.formats.AudioFormat;
 import com.github.kiulian.downloader.model.videos.formats.Format;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 public class YoutubeDownloader {
@@ -29,8 +24,6 @@ public class YoutubeDownloader {
     public void downloadYoutubeAsync(String name, Format format){
         com.github.kiulian.downloader.YoutubeDownloader downloader =
                 new com.github.kiulian.downloader.YoutubeDownloader();
-
-        //Format format = audioFormats.get(positionAudioFormat).getAudioFormat();
 
         File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
 
@@ -56,7 +49,6 @@ public class YoutubeDownloader {
                 .saveTo(outputDir)
                 .async();
 
-       // String name = edxName.getText().toString();
         if(name.length() > 0){
             request.renameTo(name);
         }
@@ -68,7 +60,6 @@ public class YoutubeDownloader {
                 File data = response.data();
                 Looper.prepare();
                 mListener.setProgressCompleted();
-                // Toast.makeText (getContext(), "Good", Toast.LENGTH_LONG).show();
                 if(mListener != null)
                     mListener.updateList();
                 Looper.loop();

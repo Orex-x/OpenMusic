@@ -157,7 +157,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
 
     private Runnable updateSeekBar = new Runnable() {
         public void run() {
-            long totalDuration = PlayerController.getPlayer().getPlayer().getDuration();
+            //long totalDuration = PlayerController.getPlayer().getPlayer().getDuration();
             long currentDuration = PlayerController.getPlayer().getPlayer().getCurrentPosition();
 
             // Displaying Total Duration time

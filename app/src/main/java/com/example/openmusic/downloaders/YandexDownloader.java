@@ -45,7 +45,6 @@ public class YandexDownloader {
                 }
             }
         });
-        //Toast.makeText(getContext(), "Good", Toast.LENGTH_SHORT).show();
     }
 
 
