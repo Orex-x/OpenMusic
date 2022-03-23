@@ -136,6 +136,7 @@ public class MainActivity extends AppCompatActivity implements
                     case R.id.page_1:{
                         FragmentManager fragmentManager = getSupportFragmentManager();
                         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                        fragmentTransaction.hide(downloadSongFragment);
                         fragmentTransaction.replace(R.id.fragment, songListFragment);
                         fragmentTransaction.commit();
                         return true;
@@ -143,6 +144,7 @@ public class MainActivity extends AppCompatActivity implements
                     case R.id.page_2:{
                         FragmentManager fragmentManager = getSupportFragmentManager();
                         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                        fragmentTransaction.hide(songListFragment);
                         fragmentTransaction.replace(R.id.fragment, downloadSongFragment);
                         fragmentTransaction.commit();
                         return true;
@@ -154,14 +156,16 @@ public class MainActivity extends AppCompatActivity implements
         });
 
         FragmentManager fragmentManager = getSupportFragmentManager();
+
+
+
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.fragment, songListFragment);
         fragmentTransaction.commit();
 
-        FragmentTransaction fragmentTransactionSongControl = fragmentManager.beginTransaction();
+/*        FragmentTransaction fragmentTransactionSongControl = fragmentManager.beginTransaction();
         fragmentTransactionSongControl.add(R.id.fragmentControlSong, songControlFragment);
-        fragmentTransactionSongControl.commit();
-
+        fragmentTransactionSongControl.commit();*/
 
         adapter = new SongAdapter(this, musicRepository.getSongs());
         adapter.setOnCardClickListener(this);
@@ -276,9 +280,15 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void clickPause() {
-        if (mediaController != null)
-            mediaController.getTransportControls().pause();
+    public void clickPausePlay(boolean setPause) {
+        if (mediaController != null){
+            if(setPause){
+                mediaController.getTransportControls().pause();
+            }else{
+                mediaController.getTransportControls().play();
+            }
+        }
+
     }
 
     @Override

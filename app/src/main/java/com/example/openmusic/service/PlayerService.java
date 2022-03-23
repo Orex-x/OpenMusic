@@ -26,6 +26,7 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -163,23 +164,14 @@ public class PlayerService extends Service {
 
         @Override
         public void onPause() {
-            Log.i("MyTAG", "onPause audioFocusRequested = " + audioFocusRequested);
-            if (audioFocusRequested) {
-                audioFocusRequested = false;
 
-                if(currentState == PlaybackStateCompat.STATE_PAUSED
-                        || currentState == PlaybackStateCompat.STATE_STOPPED){
-                    onPlay();
-                }else{
-                    player.pause();
-                    currentState = PlaybackStateCompat.STATE_PAUSED;
-                    mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
-                            PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+            player.pause();
+            currentState = PlaybackStateCompat.STATE_PAUSED;
+            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
+                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+            refreshNotificationAndForegroundStatus(currentState);
 
-                    refreshNotificationAndForegroundStatus(currentState);
-                }
-                mListener.changeImageResourceBtnPause();
-            }
+            mListener.changeImageResourceBtnPause();
         }
 
         @Override
@@ -310,21 +302,31 @@ public class PlayerService extends Service {
         switch (playbackState) {
             case PlaybackStateCompat.STATE_PLAYING: {
                 final NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                final Notification notification = getNotification(playbackState);
-                // аля так
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    NotificationChannel nc = new NotificationChannel(NOTIFICATION_DEFAULT_CHANNEL_ID, "PlayerService", NotificationManager.IMPORTANCE_HIGH);
-                    nm.createNotificationChannel(nc);
+                try{
+                    final Notification notification = getNotification(playbackState);
+                    // аля так
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        NotificationChannel nc = new NotificationChannel(NOTIFICATION_DEFAULT_CHANNEL_ID, "PlayerService", NotificationManager.IMPORTANCE_HIGH);
+                        nm.createNotificationChannel(nc);
+                    }
+
+                    nm.notify(NOTIFICATION_ID, notification);
+                    startForeground(NOTIFICATION_ID, notification);
+                }catch (NullPointerException e){
+
                 }
 
-                nm.notify(NOTIFICATION_ID, notification);
-                startForeground(NOTIFICATION_ID, notification);
                 break;
             }
             case PlaybackStateCompat.STATE_PAUSED: {
-                NotificationManagerCompat.from(PlayerService.this)
-                        .notify(NOTIFICATION_ID, getNotification(playbackState));
-                stopForeground(false);
+                try{
+                    NotificationManagerCompat.from(PlayerService.this)
+                            .notify(NOTIFICATION_ID, getNotification(playbackState));
+                    stopForeground(false);
+                }catch (NullPointerException e){
+
+                }
+
                 break;
             }
             default: {
@@ -335,7 +337,7 @@ public class PlayerService extends Service {
     }
 
 
-    public PendingIntent myBuildMediaButtonPendingIntent(Context context,
+    public static PendingIntent myBuildMediaButtonPendingIntent(Context context,
                                                          @PlaybackStateCompat.MediaKeyAction long action){
         @SuppressLint("RestrictedApi")
         ComponentName mbrComponent = MediaButtonReceiver.getMediaButtonReceiverComponent(context);
@@ -346,7 +348,7 @@ public class PlayerService extends Service {
         }
         return myBuildMediaButtonPendingIntent(context, mbrComponent, action);
     }
-    public PendingIntent myBuildMediaButtonPendingIntent(Context context, ComponentName mbrComponent,
+    public static PendingIntent myBuildMediaButtonPendingIntent(Context context, ComponentName mbrComponent,
                                                          @PlaybackStateCompat.MediaKeyAction long action){
         if (mbrComponent == null) {
             Log.w(TAG, "The component name of media button receiver should be provided.");
@@ -365,42 +367,45 @@ public class PlayerService extends Service {
     }
 
     private Notification getNotification(int playbackState) {
-        NotificationCompat.Builder builder = MediaStyleHelper.from(this, mediaSession);
+        try{
+            NotificationCompat.Builder builder = MediaStyleHelper.from(this, mediaSession);
+            builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_previous, "previous",
+                    myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)));
+
+            if (playbackState == PlaybackStateCompat.STATE_PLAYING)
+                builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_pause, "pause",
+                        myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
+            else
+                builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_play, "play",
+                        myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
+
+            builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_next, "next",
+                    myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)));
 
 
-        builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_previous, "previous",
-                myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)));
+            builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                    .setShowActionsInCompactView(1)
+                    .setShowCancelButton(true)
+                    .setCancelButtonIntent(myBuildMediaButtonPendingIntent(this,
+                            PlaybackStateCompat.ACTION_STOP))
+                    .setMediaSession(mediaSession.getSessionToken())); // setMediaSession требуется для Android Wear
 
-        if (playbackState == PlaybackStateCompat.STATE_PLAYING)
-            builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_pause, "pause",
-                    myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
-        else
-            builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_play, "play",
-                    myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
+            builder.setSmallIcon(R.drawable.ic_group);
+            builder.setColor(ContextCompat.getColor(this, R.color.black)); // The whole background (in MediaStyle), not just icon background
+            builder.setShowWhen(false);
 
-        builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_next, "next",
-                myBuildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)));
+            builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+            builder.setOnlyAlertOnce(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                builder.setChannelId(NOTIFICATION_DEFAULT_CHANNEL_ID);
+            }
 
 
-        builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                .setShowActionsInCompactView(1)
-                .setShowCancelButton(true)
-                .setCancelButtonIntent(myBuildMediaButtonPendingIntent(this,
-                        PlaybackStateCompat.ACTION_STOP))
-                .setMediaSession(mediaSession.getSessionToken())); // setMediaSession требуется для Android Wear
+            return builder.build();
+        }catch (NullPointerException e){
 
-        builder.setSmallIcon(R.drawable.ic_group);
-        builder.setColor(ContextCompat.getColor(this, R.color.activity_back)); // The whole background (in MediaStyle), not just icon background
-        builder.setShowWhen(false);
-
-        builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-        builder.setOnlyAlertOnce(true);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setChannelId(NOTIFICATION_DEFAULT_CHANNEL_ID);
         }
-
-
-        return builder.build();
+        return null;
     }
 
 

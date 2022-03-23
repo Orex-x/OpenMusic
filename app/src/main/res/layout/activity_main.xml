@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:launchMode="singleTop"
-    android:background="@color/activity_back"
+    android:background="?attr/background_color"
     android:screenOrientation="portrait"
     tools:context=".MainActivity">
 
@@ -23,6 +23,7 @@
         android:layout_width="match_parent"
         android:layout_height="70dp"
         android:layout_marginBottom="60dp"
+        android:background="?attr/background_color_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -31,8 +32,8 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="60dp"
+        android:background="?attr/background_color_light"
         app:itemTextColor="@color/black"
-        android:background="@color/fragment_back"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_navigation_menu" />
 

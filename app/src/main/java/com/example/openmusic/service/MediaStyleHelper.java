@@ -22,39 +22,26 @@ public class MediaStyleHelper {
      * @return A pre-built notification with information from the given media session.
      */
     static NotificationCompat.Builder from(Context context, MediaSessionCompat mediaSession) {
-        MediaControllerCompat controller = mediaSession.getController();
-        MediaMetadataCompat mediaMetadata = controller.getMetadata();
-        MediaDescriptionCompat description = mediaMetadata.getDescription();
+        try{
+            MediaControllerCompat controller = mediaSession.getController();
+            MediaMetadataCompat mediaMetadata = controller.getMetadata();
+            MediaDescriptionCompat description = mediaMetadata.getDescription();
 
 
-        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                context,
-                0, mediaButtonIntent,
-                PendingIntent.FLAG_IMMUTABLE
-        );
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+            builder
+                    .setContentTitle(description.getTitle())
+                    .setContentText(description.getSubtitle())
+                    .setSubText(description.getDescription())
+                    .setLargeIcon(description.getIconBitmap())
+                    .setContentIntent(controller.getSessionActivity())
+                    .setDeleteIntent(
+                            PlayerService.myBuildMediaButtonPendingIntent(context, PlaybackStateCompat.ACTION_STOP))
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            return builder;
+        }catch (NullPointerException e){
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
-        builder
-                .setContentTitle(description.getTitle())
-                .setContentText(description.getSubtitle())
-                .setSubText(description.getDescription())
-                .setLargeIcon(description.getIconBitmap())
-                .setContentIntent(controller.getSessionActivity())
-                .setDeleteIntent(
-                        pendingIntent)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
-
-       /* NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
-        builder
-                .setContentTitle(description.getTitle())
-                .setContentText(description.getSubtitle())
-                .setSubText(description.getDescription())
-                .setLargeIcon(description.getIconBitmap())
-                .setContentIntent(controller.getSessionActivity())
-                .setDeleteIntent(
-                        MediaButtonReceiver.buildMediaButtonPendingIntent(context, PlaybackStateCompat.ACTION_STOP))
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);*/
-        return builder;
+        }
+        return null;
     }
 }

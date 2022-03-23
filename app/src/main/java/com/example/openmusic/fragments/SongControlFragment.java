@@ -56,7 +56,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
         animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
 
         btnBack.setOnClickListener(this::clickBack);
-        btnPause.setOnClickListener(this::clickPause);
+        btnPause.setOnClickListener(this::clickPausePlay);
         btnNext.setOnClickListener(this::clickNext);
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -84,9 +84,9 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
         mListener.clickBack();
     }
 
-    public void clickPause(View view){
+    public void clickPausePlay(View view){
         view.startAnimation(animScale);
-        mListener.clickPause();
+        mListener.clickPausePlay(player.getPlayer().isPlaying());
     }
 
     public void clickNext(View view){
@@ -143,7 +143,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
     // View на котором произошло событие и позиция этого View
     public interface SongControlFragmentListener {
         void clickBack();
-        void clickPause();
+        void clickPausePlay(boolean setPause);
         void clickNext();
         void seekTo(int progress);
     }
