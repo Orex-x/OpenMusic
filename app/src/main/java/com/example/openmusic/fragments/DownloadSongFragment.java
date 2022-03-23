@@ -24,7 +24,6 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
@@ -36,7 +35,7 @@ import com.example.openmusic.LinkParse;
 import com.example.openmusic.api.ApiClient;
 import com.example.openmusic.models.MyAudioFormat;
 import com.example.openmusic.R;
-import com.example.openmusic.adpters.RecyclerAdapterTest;
+import com.example.openmusic.adpters.MusicFormatAdapter;
 import com.github.kiulian.downloader.Config;
 import com.github.kiulian.downloader.YoutubeDownloader;
 import com.github.kiulian.downloader.downloader.YoutubeCallback;
@@ -74,7 +73,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
     private static final int REQUEST_CODE_WRITE_FILES = 2;
     private static boolean WRITE_FILES_GRANTED = false;
     List<MyAudioFormat> audioFormats = new ArrayList<>();
-    RecyclerAdapterTest adapter;
+    MusicFormatAdapter adapter;
     private int positionAudioFormat = 0;
 
     Animation animScale;
@@ -94,7 +93,7 @@ public class DownloadSongFragment extends Fragment implements AdapterView.OnItem
         list_format = v.findViewById(R.id.list_format);
         list_format.setLayoutManager(new LinearLayoutManager(getContext(),
                 RecyclerView.VERTICAL, false));
-        adapter = new RecyclerAdapterTest(getContext(), audioFormats);
+        adapter = new MusicFormatAdapter(getContext(), audioFormats);
         adapter.setOnItemClickListener(this);
         list_format.setAdapter(adapter);
 

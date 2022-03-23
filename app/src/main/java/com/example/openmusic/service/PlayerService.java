@@ -68,7 +68,6 @@ public class PlayerService extends Service {
     );
 
 
-
     Player player;
     private int current_song = 0;
 
@@ -164,18 +163,23 @@ public class PlayerService extends Service {
 
         @Override
         public void onPause() {
-            if(currentState == PlaybackStateCompat.STATE_PAUSED
-                    || currentState == PlaybackStateCompat.STATE_STOPPED){
-                onPlay();
-            }else{
-                player.pause();
-                currentState = PlaybackStateCompat.STATE_PAUSED;
-                mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
-                        PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+            Log.i("MyTAG", "onPause audioFocusRequested = " + audioFocusRequested);
+            if (audioFocusRequested) {
+                audioFocusRequested = false;
 
-                refreshNotificationAndForegroundStatus(currentState);
+                if(currentState == PlaybackStateCompat.STATE_PAUSED
+                        || currentState == PlaybackStateCompat.STATE_STOPPED){
+                    onPlay();
+                }else{
+                    player.pause();
+                    currentState = PlaybackStateCompat.STATE_PAUSED;
+                    mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
+                            PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+
+                    refreshNotificationAndForegroundStatus(currentState);
+                }
+                mListener.changeImageResourceBtnPause();
             }
-            mListener.changeImageResourceBtnPause();
         }
 
         @Override
@@ -188,6 +192,8 @@ public class PlayerService extends Service {
         public void onStop() {
 
             unregisterReceiver(becomingNoisyReceiver);
+
+            Log.i("MyTAG", "onStop audioFocusRequested = " + audioFocusRequested);
 
             if (audioFocusRequested) {
                 audioFocusRequested = false;
@@ -223,13 +229,11 @@ public class PlayerService extends Service {
 
         @Override
         public void onSkipToPrevious() {
-
             Song song = musicRepository.getPrevious();
             setStatePlay();
             refreshNotificationAndForegroundStatus(currentState);
             updateMetadataFromTrack(song);
             prepareToPlay(song);
-
         }
 
         private void prepareToPlay(Song song) {
@@ -247,6 +251,8 @@ public class PlayerService extends Service {
         }
 
         public void setStatePlay(){
+
+            Log.i("MyTAG", "setStatePlay audioFocusRequested = " + audioFocusRequested);
             if (!audioFocusRequested) {
                 audioFocusRequested = true;
 
@@ -254,7 +260,8 @@ public class PlayerService extends Service {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     audioFocusResult = audioManager.requestAudioFocus(audioFocusRequest);
                 } else {
-                    audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+                    audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
+                            AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
                 }
                 if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
                     return;
