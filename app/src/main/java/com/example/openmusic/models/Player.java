@@ -10,6 +10,8 @@ import com.example.openmusic.models.Song;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import io.netty.internal.tcnative.AsyncTask;
+
 public class Player {
     private MediaPlayer player;
     private int currentSong;
@@ -51,6 +53,7 @@ public class Player {
         Uri uri = Uri.parse(path);
         try {
             //mPlayer.stop();
+            //тут надо во второй поток
             player.reset();
             player.setDataSource(context, uri);
             player.prepare();
@@ -64,6 +67,7 @@ public class Player {
         }
         return null;
     }
+
 
     public void pause(){
         player.pause();

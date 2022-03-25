@@ -322,6 +322,8 @@ public class MainActivity extends AppCompatActivity implements
             mediaController.getTransportControls().skipToPrevious();
     }
 
+
+
     @Override
     public void clickPausePlay(boolean setPause) {
         if (mediaController != null){

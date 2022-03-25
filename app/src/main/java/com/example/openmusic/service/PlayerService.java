@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -228,6 +229,7 @@ public class PlayerService extends Service {
             prepareToPlay(song);
         }
 
+
         private void prepareToPlay(Song song) {
             player.playSong(song, getApplicationContext());
             mListener.changeImageResourceBtnPause();
@@ -306,7 +308,8 @@ public class PlayerService extends Service {
                     final Notification notification = getNotification(playbackState);
                     // аля так
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        NotificationChannel nc = new NotificationChannel(NOTIFICATION_DEFAULT_CHANNEL_ID, "PlayerService", NotificationManager.IMPORTANCE_HIGH);
+                        NotificationChannel nc = new NotificationChannel(NOTIFICATION_DEFAULT_CHANNEL_ID,
+                                "PlayerService", NotificationManager.IMPORTANCE_DEFAULT);
                         nm.createNotificationChannel(nc);
                     }
 

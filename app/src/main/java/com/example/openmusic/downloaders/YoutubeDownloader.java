@@ -57,12 +57,16 @@ public class YoutubeDownloader {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                File data = response.data();
-                Looper.prepare();
-                mListener.setProgressCompleted();
-                if(mListener != null)
-                    mListener.updateList();
-                Looper.loop();
+                try{
+                    File data = response.data();
+                    Looper.prepare();
+                    mListener.setProgressCompleted();
+                    if(mListener != null)
+                        mListener.updateList();
+                    Looper.loop();
+                }catch(Exception e){
+
+                }
             }
         };
         Thread thread = new Thread(runnable);

@@ -6,7 +6,6 @@ import android.os.Bundle;
 import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,12 +15,13 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.example.openmusic.MainActivity;
 import com.example.openmusic.models.Player;
 import com.example.openmusic.PlayerController;
 import com.example.openmusic.R;
 import com.example.openmusic.models.Song;
 import com.example.openmusic.service.PlayerService;
+
+import io.netty.internal.tcnative.AsyncTask;
 
 
 public class SongControlFragment extends Fragment implements Player.OnPlayerListener , PlayerService.MainActivityListener {
@@ -34,8 +34,10 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
 
     PlayerService service;
     Animation animScale;
-
     Thread threadSeekBar;
+
+
+
     ThreadUpdateSeekBar myThread = new ThreadUpdateSeekBar();
 
     //for saving
@@ -104,7 +106,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
+                elapsed.setText(milliSecondsToTimer(progress));
             }
 
             @Override
@@ -122,20 +124,25 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
 
 
     public void clickBack(View view){
-        view.startAnimation(animScale);
         mListener.clickBack();
+        view.startAnimation(animScale);
     }
 
 
     public void clickPausePlay(View view){
-        view.startAnimation(animScale);
+       /* ThreadAnimation threadAnimation = new ThreadAnimation(view, animScale);
+        animHandler.postDelayed(threadAnimation, 0);*/
+
         mListener.clickPausePlay(player.getPlayer().isPlaying());
+        view.startAnimation(animScale);
     }
 
 
     public void clickNext(View view){
-        view.startAnimation(animScale);
         mListener.clickNext();
+
+
+        view.startAnimation(animScale);
     }
 
 
@@ -192,7 +199,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
                 // Displaying Total Duration time
                 //  remaining.setText(""+ milliSecondsToTimer(totalDuration-currentDuration));
                 // Displaying time completed playing
-                elapsed.setText(""+ milliSecondsToTimer(currentDuration));
+                elapsed.setText(milliSecondsToTimer(currentDuration));
 
                 // Updating progress bar
                 seekBar.setProgress((int)currentDuration);
@@ -203,6 +210,9 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
             }
         }
     }
+
+
+
 
 
     public String milliSecondsToTimer(long milliseconds){
