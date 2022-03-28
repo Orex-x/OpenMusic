@@ -157,7 +157,6 @@ public class PlayerService extends Service {
                 prepareToPlay(song);
                 updateMetadataFromTrack(song);
             }
-            mListener.changeImageResourceBtnPause();
             setStatePlay();
             refreshNotificationAndForegroundStatus(currentState);
 
@@ -171,8 +170,6 @@ public class PlayerService extends Service {
             mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
                     PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
             refreshNotificationAndForegroundStatus(currentState);
-
-            mListener.changeImageResourceBtnPause();
         }
 
         @Override
@@ -207,7 +204,6 @@ public class PlayerService extends Service {
             refreshNotificationAndForegroundStatus(currentState);
 
             stopSelf();
-            mListener.changeImageResourceBtnPause();
         }
 
         @Override
@@ -231,9 +227,12 @@ public class PlayerService extends Service {
 
 
         private void prepareToPlay(Song song) {
+            mListener.setSongData(song);
+            mListener.setDuration(song.getDuration());
+            current_song = musicRepository.getSongs().indexOf(song);
+
             player.playSong(song, getApplicationContext());
-            mListener.changeImageResourceBtnPause();
-            current_song = musicRepository.getCurrentItemIndex();
+
         }
 
         private void updateMetadataFromTrack(Song song) {
@@ -418,7 +417,9 @@ public class PlayerService extends Service {
     // создаем сам интерфейс и указываем метод и передаваемые им аргументы
     // View на котором произошло событие и позиция этого View
     public interface MainActivityListener {
-        void changeImageResourceBtnPause();
+        void setSongData(Song song);
+        void setDuration(int duration);
+
     }
 
     // метод-сеттер для привязки колбэка к получателю событий

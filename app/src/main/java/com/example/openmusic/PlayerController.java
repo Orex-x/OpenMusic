@@ -11,7 +11,7 @@ public class PlayerController {
 
     public static Player getPlayer(){
         if(mPlayer == null){
-            mPlayer = new Player(new MediaPlayer(), 0, new ArrayList<>());
+            mPlayer = new Player(new MediaPlayer());
         }
         return mPlayer;
     }

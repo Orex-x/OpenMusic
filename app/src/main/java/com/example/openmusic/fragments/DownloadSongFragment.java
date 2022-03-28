@@ -82,7 +82,7 @@ public class DownloadSongFragment extends Fragment implements
 
     MusicFormatAdapter adapter;
 
-    Animation animScale;
+    Animation animScale, animScaleReverse;
 
     YandexDownloader yandexDownloader;
     YoutubeDownloader youtubeDownloader;
@@ -123,6 +123,7 @@ public class DownloadSongFragment extends Fragment implements
         list_format.setAdapter(adapter);
 
         animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
+        animScaleReverse = AnimationUtils.loadAnimation(getContext(), R.anim.scale_reverse);
 
         btnClear_link.setOnClickListener(v1 -> {
             edxLink.setText("");
@@ -195,6 +196,7 @@ public class DownloadSongFragment extends Fragment implements
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void ButtonClickDownload(View view){
         view.startAnimation(animScale);
+        view.startAnimation(animScaleReverse);
         setPermission();
      }
 

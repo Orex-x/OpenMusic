@@ -24,7 +24,8 @@ import com.example.openmusic.service.PlayerService;
 import io.netty.internal.tcnative.AsyncTask;
 
 
-public class SongControlFragment extends Fragment implements Player.OnPlayerListener , PlayerService.MainActivityListener {
+public class SongControlFragment extends Fragment implements Player.OnPlayerListener ,
+        PlayerService.MainActivityListener {
 
     ImageButton btnBack, btnPause, btnNext;
     SeekBar seekBar;
@@ -33,7 +34,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
     Handler seekHandler = new Handler();
 
     PlayerService service;
-    Animation animScale;
+    Animation animScale, animScaleReverse;
     Thread threadSeekBar;
 
 
@@ -77,6 +78,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
         txtSongAuthor = v.findViewById(R.id.txtSongAuthor);
 
         animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
+        animScaleReverse = AnimationUtils.loadAnimation(getContext(), R.anim.scale_reverse);
 
         if(savedInstanceState != null){
             progress = savedInstanceState.getInt("progress");
@@ -124,25 +126,23 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
 
 
     public void clickBack(View view){
-        mListener.clickBack();
         view.startAnimation(animScale);
+        view.startAnimation(animScaleReverse);
+        mListener.clickBack();
     }
 
 
     public void clickPausePlay(View view){
-       /* ThreadAnimation threadAnimation = new ThreadAnimation(view, animScale);
-        animHandler.postDelayed(threadAnimation, 0);*/
-
-        mListener.clickPausePlay(player.getPlayer().isPlaying());
         view.startAnimation(animScale);
+        view.startAnimation(animScaleReverse);
+        mListener.clickPausePlay(player.getPlayer().isPlaying());
     }
 
 
     public void clickNext(View view){
-        mListener.clickNext();
-
-
         view.startAnimation(animScale);
+        view.startAnimation(animScaleReverse);
+        mListener.clickNext();
     }
 
 
@@ -164,13 +164,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
 
 
     @Override
-    public void setSongData(Song song, int duration) {
-         seekBar.setProgress(0);
-         seekBar.setMax(duration);
-        // Updating progress bar
-
-        seekHandler.postDelayed(threadSeekBar, 15);
-
+    public void setSongData(Song song) {
         txtSongName.setText(song.getTitle());
         if(song.getArtist() != null){
             if(song.getArtist().length() > 30){
@@ -182,11 +176,19 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
             txtSongAuthor.setText(song.getArtist());
 
         //for saving
-        this.duration = duration;
         this.title = song.getTitle();
         this.artist = song.getArtist();
     }
 
+    @Override
+    public void setDuration(int duration) {
+        // Updating progress bar
+        seekBar.setProgress(0);
+        seekBar.setMax(duration);
+        seekHandler.postDelayed(threadSeekBar, 15);
+        //for saving
+        this.duration = duration;
+    }
 
     class ThreadUpdateSeekBar implements Runnable {
 
@@ -210,6 +212,8 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
             }
         }
     }
+
+
 
 
 

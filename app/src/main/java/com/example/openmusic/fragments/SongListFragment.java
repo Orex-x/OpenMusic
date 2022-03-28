@@ -28,7 +28,7 @@ public class SongListFragment extends Fragment {
     ImageButton btnUpdateList;
     Player player;
     EditText edtSearch;
-    Animation animScale;
+    Animation animScale, animScaleReverse;
 
 
     //for saving
@@ -51,6 +51,7 @@ public class SongListFragment extends Fragment {
         edtSearch = v.findViewById(R.id.edtSearch);
 
         animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
+        animScaleReverse = AnimationUtils.loadAnimation(getContext(), R.anim.scale_reverse);
 
         if(mListener != null)
             mListener.setAdapter(lvMusics);
@@ -60,9 +61,10 @@ public class SongListFragment extends Fragment {
             public void onClick(View v) {
                 if(mListener != null){
                     v.startAnimation(animScale);
+                    v.startAnimation(animScaleReverse);
                     String search = edtSearch.getText().toString();
-                    mListener.search(search);
-
+                    if(search.length() != 0)
+                        mListener.search(search);
                 }
             }
         });

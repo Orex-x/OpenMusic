@@ -9,31 +9,44 @@ import com.example.openmusic.models.Song;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import io.netty.internal.tcnative.AsyncTask;
 
 public class Player {
     private MediaPlayer player;
-    private int currentSong;
-    private ArrayList<Song> songs = new ArrayList<>();
 
-    public Player(MediaPlayer player, int currentSong, ArrayList<Song> songs) {
+    private Timer mTimer;
+    private MyTimerTask mMyTimerTask;
+
+    public Player(MediaPlayer player) {
         this.player = player;
-        this.currentSong = currentSong;
-        this.songs = songs;
 
-        this.player.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-            @Override
-            public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                mListener.OnBufferingUpdateListener(percent);
+
+        this.player.setOnBufferingUpdateListener((mp, percent) ->
+                mListener.OnBufferingUpdateListener(percent));
+        this.player.setOnCompletionListener(mp ->
+                mListener.OnCompletionListener(mp));
+        this.player.setOnPreparedListener(mp -> {
+            if (mTimer != null) {
+                mTimer.cancel();
             }
+            mTimer = new Timer();
+            mMyTimerTask = new MyTimerTask();
+            mTimer.schedule(mMyTimerTask, 500);
+
         });
-        this.player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                mListener.OnCompletionListener(mp);
-            }
-        });
+    }
+
+    class MyTimerTask extends TimerTask {
+
+        @Override
+        public void run() {
+            player.start();
+            mListener.changeImageResourceBtnPause();
+        }
     }
 
 
@@ -47,38 +60,42 @@ public class Player {
     }
 
 
-    public Song playSong(Song song, Context context){
+    public void playSong(Song song, Context context){
         String path = Environment.getExternalStoragePublicDirectory(
                 song.getPath() + song.getDisplayName()).getPath();
         Uri uri = Uri.parse(path);
         try {
-            //mPlayer.stop();
-            //тут надо во второй поток
             player.reset();
+            mListener.changeImageResourceBtnPause();
             player.setDataSource(context, uri);
-            player.prepare();
-            player.start();
-
-            mListener.setSongData(song, player.getDuration());
-
-            return song;
+            player.prepareAsync();
         } catch (IOException e) {
             e.printStackTrace();
+        }catch (Exception e){
+            e.printStackTrace();
         }
-        return null;
     }
 
 
     public void pause(){
+        if (mTimer != null) {
+            mTimer.cancel();
+        }
         player.pause();
+        mListener.changeImageResourceBtnPause();
     }
 
     public void start(){
         player.start();
+        mListener.changeImageResourceBtnPause();
     }
 
     public void stop(){
+        if (mTimer != null) {
+            mTimer.cancel();
+        }
        player.stop();
+       mListener.changeImageResourceBtnPause();
     }
 
     // создаем сам интерфейс и указываем метод и передаваемые им аргументы
@@ -86,7 +103,7 @@ public class Player {
     public interface OnPlayerListener {
         void OnBufferingUpdateListener(int percent);
         void OnCompletionListener(MediaPlayer mp);
-        void setSongData(Song song, int duration);
+        void changeImageResourceBtnPause();
     }
 
     // создаем поле объекта-колбэка

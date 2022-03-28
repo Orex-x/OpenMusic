@@ -6,17 +6,19 @@ public class Song {
     private String artist;
     private String displayName;
     private String path;
+    private int duration;
 
 
     public Song() {
     }
 
-    public Song(long id, String title, String artist, String displayName, String path) {
+    public Song(long id, String title, String artist, String displayName, String path, int duration) {
         this.id = id;
         this.title = title;
         this.artist = artist;
         this.displayName = displayName;
         this.path = path;
+        this.duration = duration;
     }
 
     public long getId() {
@@ -57,5 +59,13 @@ public class Song {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
     }
 }

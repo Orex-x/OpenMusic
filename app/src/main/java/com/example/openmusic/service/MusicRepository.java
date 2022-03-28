@@ -75,15 +75,17 @@ public class MusicRepository {
                     (MediaStore.Audio.Media.ARTIST);
             int displayNameColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME);
             int relativePathColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH);
+            int duration = musicCursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
 
             //add songs to list
             do {
                 long thisId = musicCursor.getLong(idColumn);
+                int thisDuration = musicCursor.getInt(duration);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
                 String thisDisplayName = musicCursor.getString(displayNameColumn);
                 String thisRelativePath = musicCursor.getString(relativePathColumn);
-                songs.add(new Song(thisId, thisTitle, thisArtist, thisDisplayName, thisRelativePath));
+                songs.add(new Song(thisId, thisTitle, thisArtist, thisDisplayName, thisRelativePath, thisDuration));
             }
             while (musicCursor.moveToNext());
         }
@@ -99,7 +101,6 @@ public class MusicRepository {
     public void search(String search, Context context) {
         update(context);
         if(search.length() != 0){
-            update(context);
             ArrayList<Song> result_search = new ArrayList<>();
             for (Song song : songs) {
                 if(song.getDisplayName().toLowerCase(Locale.ROOT).contains(search.toLowerCase(Locale.ROOT))
