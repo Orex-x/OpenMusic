@@ -63,8 +63,7 @@ public class SongListFragment extends Fragment {
                     v.startAnimation(animScale);
                     v.startAnimation(animScaleReverse);
                     String search = edtSearch.getText().toString();
-                    if(search.length() != 0)
-                        mListener.search(search);
+                    mListener.search(search);
                 }
             }
         });
@@ -78,7 +77,7 @@ public class SongListFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if(count == 0)
-                    mListener.search("");
+                    mListener.search(s.toString());
             }
 
             @Override
@@ -92,7 +91,7 @@ public class SongListFragment extends Fragment {
 
             if(searchText != null){
                 edtSearch.setText(searchText);
-                //mListener.search(searchText);
+                mListener.search(searchText);
             }
         }
         return v;

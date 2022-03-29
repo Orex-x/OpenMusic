@@ -19,15 +19,7 @@
         app:layout_constraintStart_toEndOf="@+id/imageView"
         app:layout_constraintTop_toTopOf="@+id/imageView" />
 
-    <Button
-        android:id="@+id/btnDelete"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_marginEnd="16dp"
-        android:background="@drawable/ic_baseline_close_24"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+
 
     <ImageView
         android:id="@+id/imageView"

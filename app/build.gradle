@@ -47,4 +47,6 @@ dependencies {
     implementation 'io.netty:netty-tcnative-boringssl-static:2.0.48.Final'
     implementation 'com.loopj.android:android-async-http:1.4.9'
 
+    implementation 'com.chauthai.swipereveallayout:swipe-reveal-layout:1.4.1'
+
 }

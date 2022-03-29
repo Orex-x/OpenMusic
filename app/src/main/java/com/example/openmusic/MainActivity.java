@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity implements
     private String current_fragment = SIMPLE_SONG_LIST_FRAGMENT_TAG;
 
 
+
     @Override
     public void onSaveInstanceState(Bundle outState) {
         outState.putString("current_fragment", current_fragment);
@@ -93,42 +94,30 @@ public class MainActivity extends AppCompatActivity implements
 
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+/*        Player player = PlayerController.getPlayer();
+        if(player.getPlayer().isPlaying())
+            mediaController.getTransportControls().pause();*/
+        playerServiceBinder = null;
+        if (mediaController != null) {
+            mediaController.unregisterCallback(callback);
+            mediaController = null;
+        }
+        unbindService(serviceConnection);
+    }
+
+    // Вызывается перед тем, как Активность становится "видимой".
+    @Override
+    public void onRestart(){
+        super.onRestart();
+        setPermission();
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        if (savedInstanceState != null) { // saved instance state, fragment may exist
-            // look up the instance that already exists by tag
-            songControlFragment = (SongControlFragment)
-                    getSupportFragmentManager().findFragmentByTag(SIMPLE_SONG_CONTROL_FRAGMENT_TAG);
-
-            songListFragment = (SongListFragment)
-                    getSupportFragmentManager().findFragmentByTag(SIMPLE_SONG_LIST_FRAGMENT_TAG);
-
-            downloadSongFragment = (DownloadSongFragment)
-                    getSupportFragmentManager().findFragmentByTag(SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG);
-
-            current_fragment = savedInstanceState.getString("current_fragment");
-        }
-        if (songControlFragment == null) {
-            // only create fragment if they haven't been instantiated already
-            songControlFragment = new SongControlFragment();
-        }
-        if (songListFragment == null) {
-            // only create fragment if they haven't been instantiated already
-            songListFragment = new SongListFragment();
-        }
-        if (downloadSongFragment == null) {
-            // only create fragment if they haven't been instantiated already
-            downloadSongFragment = new DownloadSongFragment();
-        }
-
-        downloadSongFragment.setSongListFragmentListener(this);
-        songControlFragment.setSongControlFragmentListener(this);
-        songListFragment.setSongListFragmentListener(this);
-
-        musicRepository = MusicRepository.getMusicRepository();
-        musicRepository.update(this);
 
         callback = new MediaControllerCompat.Callback() {
             @Override
@@ -166,6 +155,42 @@ public class MainActivity extends AppCompatActivity implements
         };
 
         bindService(new Intent(this, PlayerService.class), serviceConnection, BIND_AUTO_CREATE);
+
+        if (savedInstanceState != null) { // saved instance state, fragment may exist
+            // look up the instance that already exists by tag
+            songControlFragment = (SongControlFragment)
+                    getSupportFragmentManager().findFragmentByTag(SIMPLE_SONG_CONTROL_FRAGMENT_TAG);
+
+            songListFragment = (SongListFragment)
+                    getSupportFragmentManager().findFragmentByTag(SIMPLE_SONG_LIST_FRAGMENT_TAG);
+
+            downloadSongFragment = (DownloadSongFragment)
+                    getSupportFragmentManager().findFragmentByTag(SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG);
+
+            current_fragment = savedInstanceState.getString("current_fragment");
+
+        }
+        if (songControlFragment == null) {
+            // only create fragment if they haven't been instantiated already
+            songControlFragment = new SongControlFragment();
+        }
+        if (songListFragment == null) {
+            // only create fragment if they haven't been instantiated already
+            songListFragment = new SongListFragment();
+        }
+        if (downloadSongFragment == null) {
+            // only create fragment if they haven't been instantiated already
+            downloadSongFragment = new DownloadSongFragment();
+        }
+
+        downloadSongFragment.setSongListFragmentListener(this);
+        songControlFragment.setSongControlFragmentListener(this);
+        songListFragment.setSongListFragmentListener(this);
+
+        musicRepository = MusicRepository.getMusicRepository();
+        musicRepository.update(this);
+
+
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
@@ -245,23 +270,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        playerServiceBinder = null;
-        if (mediaController != null) {
-            mediaController.unregisterCallback(callback);
-            mediaController = null;
-        }
-        unbindService(serviceConnection);
-    }
 
-    // Вызывается перед тем, как Активность становится "видимой".
-    @Override
-    public void onRestart(){
-        super.onRestart();
-        setPermission();
-    }
 
     // метод, который получит события из нашего колбэка
     @Override
@@ -305,7 +314,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void search(String search) {
-        musicRepository.search(search, this);
+        adapter.getFilter().filter(search);
         adapter.notifyDataSetChanged();
     }
 

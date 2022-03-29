@@ -37,6 +37,7 @@ import androidx.core.content.ContextCompat;
 import androidx.media.session.MediaButtonReceiver;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.openmusic.MainActivity;
 import com.example.openmusic.PlayerController;
 import com.example.openmusic.R;
 import com.example.openmusic.fragments.SongControlFragment;
@@ -79,21 +80,29 @@ public class PlayerService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        player = PlayerController.getPlayer();
-        musicRepository = MusicRepository.getMusicRepository();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            @SuppressLint("WrongConstant") NotificationChannel notificationChannel =
+                    new NotificationChannel(NOTIFICATION_DEFAULT_CHANNEL_ID,
+                            getString(R.string.notification_channel_name),
+                            NotificationManagerCompat.IMPORTANCE_DEFAULT);
+            NotificationManager notificationManager = (NotificationManager)
+                    getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(notificationChannel);
 
-        AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .build();
-        audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setOnAudioFocusChangeListener(audioFocusChangeListener)
-                .setAcceptsDelayedFocusGain(false)
-                .setWillPauseWhenDucked(true)
-                .setAudioAttributes(audioAttributes)
-                .build();
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build();
+            audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                    .setAcceptsDelayedFocusGain(false)
+                    .setWillPauseWhenDucked(true)
+                    .setAudioAttributes(audioAttributes)
+                    .build();
+        }
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
 
 
         Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
@@ -102,16 +111,33 @@ public class PlayerService extends Service {
                 0, mediaButtonIntent,
                 PendingIntent.FLAG_IMMUTABLE
         );
-
-        mediaSession = new MediaSessionCompat(this, "PlayerService", null, pendingIntent);
-
-       // mediaSession = new MediaSessionCompat(this, "PlayerService");
-
+        mediaSession = new MediaSessionCompat(this, "PlayerService",
+                null, pendingIntent);
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS
                 | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mediaSession.setCallback(mediaSessionCallback);
 
 
+        //Context appContext = getApplicationContext();
+
+        Intent activityIntent = new Intent(this, MainActivity.class);
+        mediaSession.setSessionActivity(PendingIntent.getActivity(this,
+                0, activityIntent, PendingIntent.FLAG_IMMUTABLE));
+
+        player = PlayerController.getPlayer();
+        musicRepository = MusicRepository.getMusicRepository();
+
+
+  /*      AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build();
+        audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                .setAcceptsDelayedFocusGain(false)
+                .setWillPauseWhenDucked(true)
+                .setAudioAttributes(audioAttributes)
+                .build();*/
     }
 
     @Override
@@ -124,7 +150,7 @@ public class PlayerService extends Service {
     public void onDestroy() {
         super.onDestroy();
         mediaSession.release();
-        player.stop();
+        player.getPlayer().release();
     }
 
     @Nullable
@@ -145,27 +171,36 @@ public class PlayerService extends Service {
 
         @Override
         public void onPlay() {
-
-            startService(new Intent(getApplicationContext(), PlayerService.class));
+            if (!player.getPlayer().isPlaying()) {
+                startService(new Intent(getApplicationContext(), PlayerService.class));
+                setStatePlay();
+            }
 
             if(currentState == PlaybackStateCompat.STATE_PAUSED
                     && current_song == musicRepository.getCurrentItemIndex()){
                 player.start();
-
             }else{
                 Song song = musicRepository.getCurrent();
                 prepareToPlay(song);
                 updateMetadataFromTrack(song);
             }
-            setStatePlay();
+
+
+            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
+                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+            currentState = PlaybackStateCompat.STATE_PLAYING;
+
             refreshNotificationAndForegroundStatus(currentState);
 
         }
 
         @Override
         public void onPause() {
+            if (player.getPlayer().isPlaying()) {
+                player.pause();
+                unregisterReceiver(becomingNoisyReceiver);
+            }
 
-            player.pause();
             currentState = PlaybackStateCompat.STATE_PAUSED;
             mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
                     PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
@@ -180,8 +215,10 @@ public class PlayerService extends Service {
 
         @Override
         public void onStop() {
-
-            unregisterReceiver(becomingNoisyReceiver);
+            if (player.getPlayer().isPlaying()) {
+                player.stop();
+                unregisterReceiver(becomingNoisyReceiver);
+            }
 
             Log.i("MyTAG", "onStop audioFocusRequested = " + audioFocusRequested);
 
@@ -262,11 +299,8 @@ public class PlayerService extends Service {
 
             mediaSession.setActive(true); // Сразу после получения фокуса
 
-            registerReceiver(becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
-
-            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
-                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
-            currentState = PlaybackStateCompat.STATE_PLAYING;
+            registerReceiver(becomingNoisyReceiver,
+                    new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
         }
     };
 
@@ -286,9 +320,9 @@ public class PlayerService extends Service {
         @Override
         public void onAudioFocusChange(int focusChange) {
             switch (focusChange) {
-                case AudioManager.AUDIOFOCUS_GAIN:
+                /*case AudioManager.AUDIOFOCUS_GAIN:
                     mediaSessionCallback.onPlay(); // Не очень красиво
-                    break;
+                    break;*/
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                     mediaSessionCallback.onPause();
                     break;

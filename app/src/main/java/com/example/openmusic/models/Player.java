@@ -30,18 +30,22 @@ public class Player {
         this.player.setOnCompletionListener(mp ->
                 mListener.OnCompletionListener(mp));
         this.player.setOnPreparedListener(mp -> {
-            if (mTimer != null) {
-                mTimer.cancel();
+            if(player.isPlaying()){
+                player.start();
+                mListener.changeImageResourceBtnPause();
+            }else{
+                if (mTimer != null) {
+                    mTimer.cancel();
+                }
+                mTimer = new Timer();
+                mMyTimerTask = new MyTimerTask();
+                mTimer.schedule(mMyTimerTask, 500);
             }
-            mTimer = new Timer();
-            mMyTimerTask = new MyTimerTask();
-            mTimer.schedule(mMyTimerTask, 500);
 
         });
     }
 
     class MyTimerTask extends TimerTask {
-
         @Override
         public void run() {
             player.start();

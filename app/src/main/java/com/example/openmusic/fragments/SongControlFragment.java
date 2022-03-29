@@ -6,6 +6,7 @@ import android.os.Bundle;
 import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -85,6 +86,7 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
             duration = savedInstanceState.getInt("duration");
             title = savedInstanceState.getString("title");
             artist = savedInstanceState.getString("artist");
+
 
             seekBar.setMax(duration);
             seekBar.setProgress(progress);
@@ -191,24 +193,30 @@ public class SongControlFragment extends Fragment implements Player.OnPlayerList
     }
 
     class ThreadUpdateSeekBar implements Runnable {
-
         public void run(){
+            try{
+                if(!Thread.currentThread().isInterrupted()){
+                    //long totalDuration = PlayerController.getPlayer().getPlayer().getDuration();
+                    long currentDuration = PlayerController.getPlayer().getPlayer().getCurrentPosition();
 
-            if(!Thread.currentThread().isInterrupted()){
-                //long totalDuration = PlayerController.getPlayer().getPlayer().getDuration();
-                long currentDuration = PlayerController.getPlayer().getPlayer().getCurrentPosition();
+                    // Displaying Total Duration time
+                    //  remaining.setText(""+ milliSecondsToTimer(totalDuration-currentDuration));
+                    // Displaying time completed playing
+                    elapsed.setText(milliSecondsToTimer(currentDuration));
 
-                // Displaying Total Duration time
-                //  remaining.setText(""+ milliSecondsToTimer(totalDuration-currentDuration));
-                // Displaying time completed playing
-                elapsed.setText(milliSecondsToTimer(currentDuration));
-
-                // Updating progress bar
-                seekBar.setProgress((int)currentDuration);
+                    // Updating progress bar
+                    seekBar.setProgress((int)currentDuration);
 
 
-                // Call this thread again after 15 milliseconds => ~ 1000/60fps
-                seekHandler.postDelayed(this, 15);
+                    // Call this thread again after 15 milliseconds => ~ 1000/60fps
+                    seekHandler.postDelayed(this, 15);
+                }
+            }catch (IllegalStateException e){
+                try{
+                    Log.e("IllegalStateException", e.getMessage());
+                }catch (Exception e2){
+                    Log.e("IllegalStateException:a", e2.getMessage());
+                }
             }
         }
     }
