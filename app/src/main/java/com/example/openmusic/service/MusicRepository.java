@@ -1,18 +1,27 @@
 package com.example.openmusic.service;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.util.Size;
 
 import com.example.openmusic.models.Song;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Locale;
+import java.util.Objects;
 
 public class MusicRepository {
 
@@ -65,27 +74,33 @@ public class MusicRepository {
         ContentResolver musicResolver = context.getContentResolver();
         Uri musicUri =  MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
+
+
         if(musicCursor!=null && musicCursor.moveToFirst()){
             //get columns
             int titleColumn = musicCursor.getColumnIndex
                     (MediaStore.Audio.Media.TITLE);
-            int idColumn = musicCursor.getColumnIndex
-                    (MediaStore.Audio.Media._ID);
             int artistColumn = musicCursor.getColumnIndex
                     (MediaStore.Audio.Media.ARTIST);
-            int displayNameColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME);
-            int relativePathColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH);
-            int duration = musicCursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
+            int album = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.ALBUM);
+            int displayNameColumn = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.DISPLAY_NAME);
+            int relativePathColumn = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.RELATIVE_PATH);
+            int duration = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.DURATION);
 
             //add songs to list
             do {
-                long thisId = musicCursor.getLong(idColumn);
-                int thisDuration = musicCursor.getInt(duration);
+                String thisAlbum = musicCursor.getString(album);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
                 String thisDisplayName = musicCursor.getString(displayNameColumn);
                 String thisRelativePath = musicCursor.getString(relativePathColumn);
-                songs.add(new Song(thisId, thisTitle, thisArtist, thisDisplayName, thisRelativePath, thisDuration));
+                int thisDuration = musicCursor.getInt(duration);
+                songs.add(new Song(thisTitle, thisArtist, thisDisplayName,
+                        thisRelativePath, thisDuration, thisAlbum));
             }
             while (musicCursor.moveToNext());
         }
@@ -96,5 +111,33 @@ public class MusicRepository {
                 return a.getTitle().compareTo(b.getTitle());
             }
         });
+    }
+
+    public void add(Context context, Song song){
+        // Add a specific media item.
+        ContentResolver resolver = context
+                .getContentResolver();
+
+        Uri audioCollection;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            audioCollection = MediaStore.Audio.Media
+                    .getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        } else {
+            audioCollection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        }
+
+        ContentValues newSongDetails = new ContentValues();
+        newSongDetails.put(MediaStore.Audio.Media.TITLE, song.getTitle());
+        newSongDetails.put(MediaStore.Audio.Media.ARTIST, song.getArtist());
+
+        newSongDetails.put(MediaStore.Audio.Media.DISPLAY_NAME, song.getDisplayName());
+        newSongDetails.put(MediaStore.Audio.Media.RELATIVE_PATH, song.getPath());
+        newSongDetails.put(MediaStore.Audio.Media.DURATION, song.getDuration());
+
+        try{
+            newSongDetails.put(MediaStore.Audio.Media.ALBUM, song.getAlbum());
+        }catch (NullPointerException e){}
+
+        resolver.insert(audioCollection, newSongDetails);
     }
 }

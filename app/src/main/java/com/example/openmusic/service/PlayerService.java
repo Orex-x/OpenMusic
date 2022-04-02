@@ -265,7 +265,7 @@ public class PlayerService extends Service {
 
         private void prepareToPlay(Song song) {
             mListener.setSongData(song);
-            mListener.setDuration(song.getDuration());
+            //mListener.setDuration(song.getDuration());
             current_song = musicRepository.getSongs().indexOf(song);
 
             player.playSong(song, getApplicationContext());

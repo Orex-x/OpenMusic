@@ -5,7 +5,7 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
 public class ApiClient {
-    private static final String BASE_URL = "http://1f4c-62-217-190-128.ngrok.io/api/";
+    private static final String BASE_URL = "https://d380-62-217-190-128.ngrok.io/api/";
 
     private static AsyncHttpClient client = new AsyncHttpClient();
 

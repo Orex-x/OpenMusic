@@ -32,6 +32,7 @@ public class Player {
         this.player.setOnPreparedListener(mp -> {
             if(player.isPlaying()){
                 player.start();
+                mListener.setDuration(player.getDuration());
                 mListener.changeImageResourceBtnPause();
             }else{
                 if (mTimer != null) {
@@ -49,6 +50,7 @@ public class Player {
         @Override
         public void run() {
             player.start();
+            mListener.setDuration(player.getDuration());
             mListener.changeImageResourceBtnPause();
         }
     }
@@ -108,6 +110,7 @@ public class Player {
         void OnBufferingUpdateListener(int percent);
         void OnCompletionListener(MediaPlayer mp);
         void changeImageResourceBtnPause();
+        void setDuration(int duration);
     }
 
     // создаем поле объекта-колбэка

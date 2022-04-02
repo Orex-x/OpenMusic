@@ -21,7 +21,7 @@ public class YoutubeDownloader {
 
 
 
-    public void downloadYoutubeAsync(String name, Format format){
+    public void downloadYoutubeAsync(String name, Format format, int position){
         com.github.kiulian.downloader.YoutubeDownloader downloader =
                 new com.github.kiulian.downloader.YoutubeDownloader();
 
@@ -33,7 +33,7 @@ public class YoutubeDownloader {
                     @Override
                     public void onDownloading(int progress) {
                         System.out.printf("Downloaded %d%%\n", progress);
-                        mListener.setProgress(progress);
+                        //mListener.setProgress(progress, position);
                     }
 
                     @Override
@@ -60,9 +60,9 @@ public class YoutubeDownloader {
                 try{
                     File data = response.data();
                     Looper.prepare();
-                    mListener.setProgressCompleted();
-                    if(mListener != null)
-                        mListener.updateList();
+                    mListener.setProgressCompleted(position);
+                    /*if(mListener != null)
+                        mListener.updateSongsList();*/
                     Looper.loop();
                 }catch(Exception e){
 

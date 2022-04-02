@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.chauthai.swipereveallayout.SwipeRevealLayout;
 import com.chauthai.swipereveallayout.ViewBinderHelper;
 import com.example.openmusic.R;
+import com.example.openmusic.downloaders.DownloaderListener;
 import com.example.openmusic.models.Song;
 
 import java.util.ArrayList;
@@ -34,15 +35,24 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
         this.search = search;
     }
 
+
+
+    // создаем поле объекта-колбэка
+    private static OnCardClickListener mListener;
+
+    // метод-сеттер для привязки колбэка к получателю событий
+    public void setOnCardClickListener(OnCardClickListener listener) {
+        mListener = listener;
+    }
+
+
+
     // создаем сам интерфейс и указываем метод и передаваемые им аргументы
     // View на котором произошло событие и позиция этого View
     public interface OnCardClickListener {
         void onDeleteClick(View view, int position);
         void onSongClick(View view, int position);
     }
-
-    // создаем поле объекта-колбэка
-    private static OnCardClickListener mListener;
 
 
     public SongAdapter(Context context, ArrayList<Song> states) {
@@ -121,10 +131,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
     }
 
 
-    // метод-сеттер для привязки колбэка к получателю событий
-    public void setOnCardClickListener(OnCardClickListener listener) {
-        mListener = listener;
-    }
+
 
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
@@ -133,7 +140,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
         final TextView txtListItem;
         final Button btnDelete;
         final ImageView imageView;
-        //final ConstraintLayout layout;
+        final ConstraintLayout layout;
 
         ViewHolder(View view){
             super(view);
@@ -141,7 +148,11 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
             txtListItem = view.findViewById(R.id.txtListItem);
             btnDelete = view.findViewById(R.id.btnDelete);
             imageView = view.findViewById(R.id.imageView);
-            //layout = view.findViewById(R.id.layout_song_item);
+            layout = view.findViewById(R.id.layout_song_item);
+            layout.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                mListener.onSongClick(v, position);
+            });
             swipeLayout.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 mListener.onSongClick(v, position);

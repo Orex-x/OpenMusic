@@ -1,32 +1,34 @@
 package com.example.openmusic.models;
 
 public class Song {
-    private long id;
     private String title;
     private String artist;
     private String displayName;
     private String path;
     private int duration;
+    private String album;
 
 
     public Song() {
     }
 
-    public Song(long id, String title, String artist, String displayName, String path, int duration) {
-        this.id = id;
+
+
+    public Song(String title, String artist, String displayName, String path, int duration,  String album) {
         this.title = title;
         this.artist = artist;
         this.displayName = displayName;
         this.path = path;
         this.duration = duration;
+        this.album = album;
     }
 
-    public long getId() {
-        return id;
+    public String getAlbum() {
+        return album;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setAlbum(String album) {
+        this.album = album;
     }
 
     public String getTitle() {

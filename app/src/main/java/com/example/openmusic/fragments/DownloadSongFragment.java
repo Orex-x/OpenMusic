@@ -1,10 +1,10 @@
 package com.example.openmusic.fragments;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -14,10 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,61 +24,40 @@ import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.alibaba.fastjson.JSONException;
 import com.example.openmusic.LinkParse;
-import com.example.openmusic.api.ApiClient;
+import com.example.openmusic.adpters.ProgressAdapter;
+import com.example.openmusic.adpters.YDownloadItemAdapter;
 import com.example.openmusic.downloaders.DownloaderListener;
 import com.example.openmusic.downloaders.YandexDownloader;
 import com.example.openmusic.downloaders.YoutubeDownloader;
-import com.example.openmusic.models.MyAudioFormat;
+import com.example.openmusic.models.DownloadItemViewModel;
 import com.example.openmusic.R;
-import com.example.openmusic.adpters.MusicFormatAdapter;
-import com.github.kiulian.downloader.Config;
-import com.github.kiulian.downloader.downloader.YoutubeCallback;
-import com.github.kiulian.downloader.downloader.YoutubeProgressCallback;
-import com.github.kiulian.downloader.downloader.request.RequestVideoFileDownload;
-import com.github.kiulian.downloader.downloader.request.RequestVideoInfo;
-import com.github.kiulian.downloader.downloader.response.Response;
-import com.github.kiulian.downloader.model.videos.VideoInfo;
-import com.github.kiulian.downloader.model.videos.formats.AudioFormat;
-import com.github.kiulian.downloader.model.videos.formats.Format;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.JsonHttpResponseHandler;
-
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
-
-import cz.msebera.android.httpclient.Header;
 
 
 public class DownloadSongFragment extends Fragment implements
         AdapterView.OnItemClickListener,
+        ProgressAdapter.OnYDownloadItemAdapter,
         DownloaderListener {
 
-    EditText edxLink, edxName;
-    ImageButton btnDownload, btnClear_link, btnClear_name;
-    ProgressBar progressBar;
+    EditText edxLink;
+    ImageButton btnDownload, btnClear_link;
     TextView txtProgress;
-    RecyclerView list_format;
+    RecyclerView list_song_queue;
     private static final int REQUEST_CODE_WRITE_FILES = 2;
     private static boolean WRITE_FILES_GRANTED = false;
 
-    List<MyAudioFormat> audioFormats = new ArrayList<>();
-    private int positionAudioFormat = 0;
+    ArrayList<DownloadItemViewModel> downloadItemViewModels = new ArrayList<>();
+    private int numSimultaneousDownloads = 0, numberDownloads = 0;
 
-    MusicFormatAdapter adapter;
+   // YDownloadItemAdapter adapter;
+    ProgressAdapter progressAdapter;
 
     Animation animScale, animScaleReverse;
 
@@ -88,12 +65,11 @@ public class DownloadSongFragment extends Fragment implements
     YoutubeDownloader youtubeDownloader;
 
     //for saving
-    private String name, link;
+    private String link;
 
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        outState.putString("name", name);
         outState.putString("link", link);
         super.onSaveInstanceState(outState);
     }
@@ -103,24 +79,25 @@ public class DownloadSongFragment extends Fragment implements
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_download_song, container, false);
         edxLink = v.findViewById(R.id.edxLink);
-        edxName = v.findViewById(R.id.edxName);
         txtProgress = v.findViewById(R.id.txtProgress);
         btnDownload = v.findViewById(R.id.btnDownload);
-        btnClear_name = v.findViewById(R.id.btnClear_name);
         btnClear_link = v.findViewById(R.id.btnClear_link);
-        progressBar = v.findViewById(R.id.progressBar);
-        list_format = v.findViewById(R.id.list_format);
-        list_format.setLayoutManager(new LinearLayoutManager(getContext(),
+        list_song_queue = v.findViewById(R.id.list_song_queue);
+        list_song_queue.setLayoutManager(new LinearLayoutManager(getContext(),
                 RecyclerView.VERTICAL, false));
 
-        youtubeDownloader = new YoutubeDownloader();
-        youtubeDownloader.setDownloaderListener(this);
+/*        youtubeDownloader = new YoutubeDownloader();
+        youtubeDownloader.setDownloaderListener(this);*/
         yandexDownloader = new YandexDownloader();
         yandexDownloader.setDownloaderListener(this);
 
-        adapter = new MusicFormatAdapter(getContext(), audioFormats);
-        adapter.setOnItemClickListener(this);
-        list_format.setAdapter(adapter);
+       /* adapter = new YDownloadItemAdapter(getContext(), downloadItemViewModels);
+        adapter.setOnYDownloadItemAdapter(this);
+        list_song_queue.setAdapter(adapter);*/
+
+        progressAdapter = new ProgressAdapter();
+        list_song_queue.setAdapter(progressAdapter);
+        progressAdapter.updateProgressObjects(downloadItemViewModels);
 
         animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
         animScaleReverse = AnimationUtils.loadAnimation(getContext(), R.anim.scale_reverse);
@@ -128,9 +105,7 @@ public class DownloadSongFragment extends Fragment implements
         btnClear_link.setOnClickListener(v1 -> {
             edxLink.setText("");
         });
-        btnClear_name.setOnClickListener(v1 -> {
-            edxName.setText("");
-        });
+
 
         edxLink.addTextChangedListener(new TextWatcher() {
             @Override
@@ -141,25 +116,22 @@ public class DownloadSongFragment extends Fragment implements
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String link = s.toString();
-                if(link.contains("youtu.be") && link.length() == 28){ //28 - link length
-                    try {
-                        changeListMyAudioFormat(LinkParse.parseYoutubeLink(link));
-                        list_format.setVisibility(View.VISIBLE);
-                    }catch (Exception e){
+                LinkParse linkParse = new LinkParse();
+                linkParse.parse(link);
+                switch (linkParse.getLinkType()){
+                    case YANDEX_TRACK:
+                        yandexDownloader.loadMetaDataByTrackId(linkParse.getId());
+                        break;
+                    case YANDEX_ALBUM:
+                        yandexDownloader.loadMetaDataByAlbumId(linkParse.getId());
+                        break;
+                    case YOUTUBE:
 
-                    }
+                        break;
+                    case YOUTUBE_MUSIC:
 
-                }else if(link.contains("music.youtube") && link.length() == 45){
-                    //https://music.youtube.com/watch?v=aymh4trStM8
-                   try {
-                       changeListMyAudioFormat(LinkParse.parseYoutubeMusicLink(link));
-                       list_format.setVisibility(View.VISIBLE);
-                   }catch (Exception e){
+                        break;
 
-                   }
-                }
-                else{
-                    list_format.setVisibility(View.GONE);
                 }
             }
 
@@ -168,38 +140,24 @@ public class DownloadSongFragment extends Fragment implements
             }
         });
 
-        progressBar.setMax(100);
         btnDownload.setOnClickListener(this::ButtonClickDownload);
 
         if(savedInstanceState != null) {
-            name = savedInstanceState.getString("name");
             link = savedInstanceState.getString("link");
-            edxName.setText(name);
             edxLink.setText(link);
         }
 
         return v;
     }
 
-    public void changeListMyAudioFormat(String link){
-        List<AudioFormat> list = youtubeDownloader.requestVideoInfo(link);
-        audioFormats.clear();
-        for (AudioFormat af : list) {
-            if(!af.extension().value().equals("weba")){
-                audioFormats.add(new MyAudioFormat(af, false));
-            }
-
-        }
-        adapter.notifyDataSetChanged();
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void ButtonClickDownload(View view){
         view.startAnimation(animScale);
         view.startAnimation(animScaleReverse);
         setPermission();
-     }
 
+     }
 
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -215,45 +173,58 @@ public class DownloadSongFragment extends Fragment implements
         }
         // если разрешение установлено, загружаем контакты
         if (WRITE_FILES_GRANTED) {
-            String link = edxLink.getText().toString();
-            if(link.length() > 0) {
-                if(link.contains("music.yandex")){
-                    yandexDownloader.getDownloadLinkByTrackId(LinkParse.parseYandexLink(link));
-                }
-                if(link.contains("youtu.be") || link.contains("music.youtube")){
-                    String name = edxName.getText().toString();
-                    youtubeDownloader.downloadYoutubeAsync(name, audioFormats.get(positionAudioFormat).getAudioFormat());
-                }
-            }
+            progressAdapter.downloadAllProgressObjects();
         }
     }
+
+
 
     private static DownloadSongFragmentListener mListener;
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        positionAudioFormat = position;
+        //positionAudioFormat = position;
     }
 
+
+
+    @Override
+    public void onDeleteClick(int position) {
+        downloadItemViewModels.remove(position);
+    }
+
+    @Override
+    public void onDownloadClick(int position) {
+
+
+    }
+
+
+
+    @SuppressLint("NotifyDataSetChanged")
+    @Override
+    public void addMetaData(DownloadItemViewModel model) {
+        downloadItemViewModels.add(model);
+        progressAdapter.updateProgressObjects(downloadItemViewModels);
+       // adapter.notifyDataSetChanged();
+    }
 
 
     @Override
     public void setProgress(int progress) {
-         txtProgress.setText("Downloaded " + progress + "%");
-         progressBar.setProgress(progress);
+        /*downloadItemViewModels.get(position).setProgress(progress);
+        adapter.notifyItemChanged(position);*/
     }
 
     @Override
-    public void setProgressCompleted() {
-        progressBar.setProgress(0);
-        txtProgress.setText("Completed");
-    }
+    public void setProgressCompleted(int position) {
+       /* DownloadItemViewModel model = downloadItemViewModels.get(position);
+        if(model != null){
+            //downloadItemViewModels.remove(model);
 
-    @Override
-    public void updateList() {
-        mListener.updateList();
+        }*/
+        numSimultaneousDownloads--;
     }
-
 
 
     // создаем сам интерфейс и указываем метод и передаваемые им аргументы
