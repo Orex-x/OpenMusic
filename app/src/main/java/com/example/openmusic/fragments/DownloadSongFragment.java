@@ -12,7 +12,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.os.Environment;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -21,42 +20,34 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import com.example.openmusic.LinkParse;
 import com.example.openmusic.adpters.ProgressAdapter;
-import com.example.openmusic.adpters.YDownloadItemAdapter;
-import com.example.openmusic.downloaders.DownloaderListener;
+import com.example.openmusic.downloaders.DownloaderMetaDataListener;
 import com.example.openmusic.downloaders.YandexDownloader;
 import com.example.openmusic.downloaders.YoutubeDownloader;
 import com.example.openmusic.models.DownloadItemViewModel;
 import com.example.openmusic.R;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 
-public class DownloadSongFragment extends Fragment implements
-        AdapterView.OnItemClickListener,
-        ProgressAdapter.OnYDownloadItemAdapter,
-        DownloaderListener {
+public class DownloadSongFragment extends Fragment implements DownloaderMetaDataListener {
 
+    ProgressBar progressBarMetaData;
     EditText edxLink;
-    ImageButton btnDownload, btnClear_link;
+    ImageButton btnDownload, btnSearch;
     TextView txtProgress;
     RecyclerView list_song_queue;
     private static final int REQUEST_CODE_WRITE_FILES = 2;
     private static boolean WRITE_FILES_GRANTED = false;
 
-    ArrayList<DownloadItemViewModel> downloadItemViewModels = new ArrayList<>();
-    private int numSimultaneousDownloads = 0, numberDownloads = 0;
 
-   // YDownloadItemAdapter adapter;
+    ArrayList<DownloadItemViewModel> downloadItemViewModels = new ArrayList<>();
+
     ProgressAdapter progressAdapter;
 
     Animation animScale, animScaleReverse;
@@ -78,10 +69,12 @@ public class DownloadSongFragment extends Fragment implements
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_download_song, container, false);
+        progressBarMetaData = v.findViewById(R.id.progressBarMetaData);
         edxLink = v.findViewById(R.id.edxLink);
         txtProgress = v.findViewById(R.id.txtProgress);
         btnDownload = v.findViewById(R.id.btnDownload);
-        btnClear_link = v.findViewById(R.id.btnClear_link);
+        btnDownload.setEnabled(false);
+        btnSearch = v.findViewById(R.id.btnSearch);
         list_song_queue = v.findViewById(R.id.list_song_queue);
         list_song_queue.setLayoutManager(new LinearLayoutManager(getContext(),
                 RecyclerView.VERTICAL, false));
@@ -91,9 +84,6 @@ public class DownloadSongFragment extends Fragment implements
         yandexDownloader = new YandexDownloader();
         yandexDownloader.setDownloaderListener(this);
 
-       /* adapter = new YDownloadItemAdapter(getContext(), downloadItemViewModels);
-        adapter.setOnYDownloadItemAdapter(this);
-        list_song_queue.setAdapter(adapter);*/
 
         progressAdapter = new ProgressAdapter();
         list_song_queue.setAdapter(progressAdapter);
@@ -102,22 +92,17 @@ public class DownloadSongFragment extends Fragment implements
         animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
         animScaleReverse = AnimationUtils.loadAnimation(getContext(), R.anim.scale_reverse);
 
-        btnClear_link.setOnClickListener(v1 -> {
-            edxLink.setText("");
-        });
+        btnSearch.setOnClickListener(v1 -> {
+            v1.startAnimation(animScale);
+            v1.startAnimation(animScaleReverse);
+            String link = edxLink.getText().toString();
+            LinkParse linkParse = new LinkParse();
+            linkParse.parse(link);
+            if(linkParse.getLinkType() != LinkParse.LinkType.NONE){
+                btnSearch.setVisibility(View.GONE);
+                progressBarMetaData.setVisibility(View.VISIBLE);
 
 
-        edxLink.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String link = s.toString();
-                LinkParse linkParse = new LinkParse();
-                linkParse.parse(link);
                 switch (linkParse.getLinkType()){
                     case YANDEX_TRACK:
                         yandexDownloader.loadMetaDataByTrackId(linkParse.getId());
@@ -126,17 +111,12 @@ public class DownloadSongFragment extends Fragment implements
                         yandexDownloader.loadMetaDataByAlbumId(linkParse.getId());
                         break;
                     case YOUTUBE:
-
                         break;
                     case YOUTUBE_MUSIC:
 
                         break;
 
                 }
-            }
-
-            public void afterTextChanged(Editable s) {
-
             }
         });
 
@@ -156,7 +136,6 @@ public class DownloadSongFragment extends Fragment implements
         view.startAnimation(animScale);
         view.startAnimation(animScaleReverse);
         setPermission();
-
      }
 
 
@@ -173,67 +152,60 @@ public class DownloadSongFragment extends Fragment implements
         }
         // если разрешение установлено, загружаем контакты
         if (WRITE_FILES_GRANTED) {
-            progressAdapter.downloadAllProgressObjects();
+           progressAdapter.downloadAllProgressObjects();
+           btnDownload.setEnabled(false);
         }
     }
-
-
-
-    private static DownloadSongFragmentListener mListener;
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        //positionAudioFormat = position;
-    }
-
-
-
-    @Override
-    public void onDeleteClick(int position) {
-        downloadItemViewModels.remove(position);
-    }
-
-    @Override
-    public void onDownloadClick(int position) {
-
-
-    }
-
 
 
     @SuppressLint("NotifyDataSetChanged")
     @Override
     public void addMetaData(DownloadItemViewModel model) {
         downloadItemViewModels.add(model);
+        progressAdapter.addMWaitingTaskSparseArray(model);
         progressAdapter.updateProgressObjects(downloadItemViewModels);
-       // adapter.notifyDataSetChanged();
+        progressBarMetaData.setVisibility(View.GONE);
+        btnSearch.setVisibility(View.VISIBLE);
+        btnSearch.startAnimation(animScale);
+        btnSearch.startAnimation(animScaleReverse);
+        btnDownload.setEnabled(true);
+        edxLink.setText("");
     }
 
-
+    Handler handler = new Handler();
     @Override
-    public void setProgress(int progress) {
-        /*downloadItemViewModels.get(position).setProgress(progress);
-        adapter.notifyItemChanged(position);*/
+    public void setProgressCompleted(int key) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                DownloadItemViewModel model = findDownloadItemViewModelById(key);
+                if(model != null){
+                    downloadItemViewModels.remove(model);
+                    if(downloadItemViewModels.size() == 0)
+                        btnDownload.setEnabled(false);
+                    progressAdapter.updateProgressObjects(downloadItemViewModels);
+
+                }
+            }
+        });
     }
 
-    @Override
-    public void setProgressCompleted(int position) {
-       /* DownloadItemViewModel model = downloadItemViewModels.get(position);
-        if(model != null){
-            //downloadItemViewModels.remove(model);
+    public DownloadItemViewModel findDownloadItemViewModelById(int key){
 
-        }*/
-        numSimultaneousDownloads--;
+        for (DownloadItemViewModel model : downloadItemViewModels){
+            if(model.getId() == key)
+                return model;
+        }
+        return null;
     }
 
+    //MainActivity
+    private static DownloadSongFragmentListener mListener;
 
-    // создаем сам интерфейс и указываем метод и передаваемые им аргументы
-    // View на котором произошло событие и позиция этого View
     public interface DownloadSongFragmentListener {
         void updateList();
-    }
+    };
 
-    // метод-сеттер для привязки колбэка к получателю событий
     public void setSongListFragmentListener(DownloadSongFragmentListener listener) {
         mListener = listener;
     }

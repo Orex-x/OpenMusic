@@ -4,6 +4,7 @@ import android.os.Environment;
 import android.os.Looper;
 import android.util.Log;
 
+import com.example.openmusic.downloaders.DownloaderListener;
 import com.github.kiulian.downloader.Config;
 import com.github.kiulian.downloader.downloader.YoutubeCallback;
 import com.github.kiulian.downloader.downloader.YoutubeProgressCallback;
@@ -21,7 +22,7 @@ public class YoutubeDownloader {
 
 
 
-    public void downloadYoutubeAsync(String name, Format format, int position){
+    public void downloadYoutubeAsync(Format format, int key){
         com.github.kiulian.downloader.YoutubeDownloader downloader =
                 new com.github.kiulian.downloader.YoutubeDownloader();
 
@@ -49,9 +50,9 @@ public class YoutubeDownloader {
                 .saveTo(outputDir)
                 .async();
 
-        if(name.length() > 0){
+       /* if(name.length() > 0){
             request.renameTo(name);
-        }
+        }*/
 
         Response<File> response = downloader.downloadVideoFile(request);
         Runnable runnable = new Runnable() {
@@ -60,9 +61,7 @@ public class YoutubeDownloader {
                 try{
                     File data = response.data();
                     Looper.prepare();
-                    mListener.setProgressCompleted(position);
-                    /*if(mListener != null)
-                        mListener.updateSongsList();*/
+                    mListener.setProgressCompleted(key);
                     Looper.loop();
                 }catch(Exception e){
 
@@ -103,10 +102,10 @@ public class YoutubeDownloader {
 
 
 
-    private static DownloaderListener mListener;
+    private static DownloaderMetaDataListener mListener;
 
     // метод-сеттер для привязки колбэка к получателю событий
-    public void setDownloaderListener(DownloaderListener listener) {
+    public void setDownloaderListener(DownloaderMetaDataListener listener) {
         mListener = listener;
     }
 }

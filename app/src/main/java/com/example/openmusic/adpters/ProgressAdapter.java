@@ -1,13 +1,10 @@
 package com.example.openmusic.adpters;
 
 import android.os.Build;
-import android.os.Environment;
-import android.os.Handler;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.DownloadListener;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -22,51 +19,35 @@ import com.example.openmusic.downloaders.YandexDownloader;
 import com.example.openmusic.models.DownloadItemViewModel;
 
 
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Stack;
 
 public class ProgressAdapter extends RecyclerView.Adapter<ProgressAdapter.ProgressViewHolder> {
 
-    private static OnYDownloadItemAdapter mListener;
-
-    public void setOnYDownloadItemAdapter(OnYDownloadItemAdapter listener) {
-        mListener = listener;
-    }
-
-    public interface OnYDownloadItemAdapter {
-        void onDeleteClick(int position);
-        void onDownloadClick(int position);
-    }
-
     private ArrayList<DownloadItemViewModel> mDownloadItemViewModelList = new ArrayList<>();
     private SparseArray<YandexDownloader> mWaitingTaskSparseArray = new SparseArray<>();
-    private int numQuery = 0;
-    private Queue<YandexDownloader> QueryStack = new LinkedList<>();
+
+
 
     public void updateProgressObjects(@NonNull ArrayList<DownloadItemViewModel> mDownloadItemViewModelList) {
         this.mDownloadItemViewModelList = mDownloadItemViewModelList;
         notifyDataSetChanged();
     }
 
+    public void addMWaitingTaskSparseArray(DownloadItemViewModel model){
+        mWaitingTaskSparseArray.put(model.getId(), new YandexDownloader(model));
+    }
+
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void downloadAllProgressObjects() {
-        class Query extends Thread{
-            @Override
-            public void run() {
-                while (!QueryStack.isEmpty() && numQuery < 2){
-                    YandexDownloader downloader = QueryStack.remove();
-                    downloader.downloadUsingByteArray();
-                }
-            }
+        for(DownloadItemViewModel model : mDownloadItemViewModelList){
+            YandexDownloader task = mWaitingTaskSparseArray.get(model.getId());
+            task.downloadUsingByteArray();
+            model.setDownloading(true);
         }
-        new Query().start();
+        notifyDataSetChanged();
     }
+
 
     @Override
     public ProgressViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -115,6 +96,7 @@ public class ProgressAdapter extends RecyclerView.Adapter<ProgressAdapter.Progre
         void bind(final DownloadItemViewModel progressObject) {
             mId = progressObject.getId();
             txtSongName.setText(progressObject.getSongName());
+            txtProgress.setText(progressObject.getProgress() + "%");
             mProgressBar.setProgress(progressObject.getProgress());
 
             YandexDownloader task = mWaitingTaskSparseArray.get(mId);
@@ -123,26 +105,19 @@ public class ProgressAdapter extends RecyclerView.Adapter<ProgressAdapter.Progre
             }
 
             btnDownload.setOnClickListener(view -> {
-                download(progressObject);
+                download();
+                progressObject.setDownloading(true);
             });
-
-            if(!progressObject.isQueue()){
-                progressObject.setQueue(true);
-                YandexDownloader task2 = new YandexDownloader(progressObject, ProgressViewHolder.this);
-                mWaitingTaskSparseArray.put(mId, task2);
-                QueryStack.offer(task2);
-            }
         }
 
-        public void download(final DownloadItemViewModel progressObject){
+        public void download(){
             // Create the task, set the listener, add to the task controller, and run
-            YandexDownloader task = new YandexDownloader(progressObject, ProgressViewHolder.this);
-            mWaitingTaskSparseArray.put(mId, task);
+            YandexDownloader task = mWaitingTaskSparseArray.get(mId);
+            task.updateListener(ProgressViewHolder.this);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 task.downloadUsingByteArray();
             }
         }
-
 
 
         public int getId() {
@@ -152,16 +127,8 @@ public class ProgressAdapter extends RecyclerView.Adapter<ProgressAdapter.Progre
         @Override
         public void setProgress(int progress) {
             mProgressBar.setProgress(progress);
+            txtProgress.setText(progress + "%");
         }
 
-        @Override
-        public void setProgressCompleted(int position) {
-            numQuery--;
-        }
-
-        @Override
-        public void addMetaData(DownloadItemViewModel model) {
-
-        }
     }
 }

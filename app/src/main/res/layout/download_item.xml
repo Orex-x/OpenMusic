@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
-        android:layout_marginRight="100dp"
+        android:layout_marginRight="60dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -19,15 +19,12 @@
 
     <TextView
         android:id="@+id/txtProgress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
+        android:layout_width="40dp"
+        android:layout_height="18dp"
+        android:layout_marginTop="16dp"
         android:text="100%"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@+id/progressBar"
-        app:layout_constraintStart_toEndOf="@+id/progressBar"
-        app:layout_constraintTop_toTopOf="@+id/progressBar"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintEnd_toEndOf="@+id/progressBar"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/txtSongName"
@@ -41,27 +38,16 @@
 
     <ImageButton
         android:id="@+id/btnDownload"
+        style="@style/ButtonStyle"
         android:layout_width="40sp"
         android:layout_height="40sp"
+        android:layout_marginRight="8dp"
+        android:visibility="visible"
         android:src="@drawable/ic_baseline_arrow_downward_24"
-        style="@style/ButtonStyle"
-        android:layout_marginLeft="8dp"
         app:layout_constraintBottom_toBottomOf="@+id/progressBar"
-        app:layout_constraintStart_toEndOf="@+id/progressBar"
-        app:layout_constraintTop_toTopOf="@+id/progressBar"
-        app:layout_constraintVertical_bias="0.593" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/progressBar" />
 
-    <ImageButton
-        android:id="@+id/btnDelete"
-        style="@style/ButtonStyle"
-        android:layout_width="40sp"
-        android:layout_height="40sp"
-        android:layout_marginLeft="4dp"
-        android:src="@drawable/ic_baseline_clear_24"
-        app:layout_constraintBottom_toBottomOf="@+id/btnDownload"
-        app:layout_constraintStart_toEndOf="@+id/btnDownload"
-        app:layout_constraintTop_toTopOf="@+id/btnDownload"
-        app:layout_constraintVertical_bias="0.0" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

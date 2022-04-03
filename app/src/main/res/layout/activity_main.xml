@@ -13,7 +13,7 @@
       android:id="@+id/fragment"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
-      android:layout_marginBottom="110dp"
+      android:layout_marginBottom="120dp"
       app:layout_constraintBottom_toBottomOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintStart_toStartOf="parent" />
@@ -22,7 +22,7 @@
         android:id="@+id/fragmentControlSong"
         android:layout_width="match_parent"
         android:layout_height="70dp"
-        android:layout_marginBottom="40dp"
+        android:layout_marginBottom="50dp"
         android:background="?attr/background_color_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -31,7 +31,7 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="50dp"
         android:background="?attr/background_color_light"
         app:itemTextColor="@color/black"
         app:itemIconSize="18dp"

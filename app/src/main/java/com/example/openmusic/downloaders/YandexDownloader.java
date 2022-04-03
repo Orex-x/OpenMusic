@@ -1,5 +1,6 @@
 package com.example.openmusic.downloaders;
 
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
@@ -9,7 +10,10 @@ import androidx.annotation.RequiresApi;
 
 import com.alibaba.fastjson.JSONException;
 import com.example.openmusic.LinkParse;
+import com.example.openmusic.MainActivity;
 import com.example.openmusic.api.ApiClient;
+import com.example.openmusic.downloaders.DownloaderListener;
+import com.example.openmusic.downloaders.DownloaderMetaDataListener;
 import com.example.openmusic.models.DownloadItemViewModel;
 import com.example.openmusic.models.Player;
 import com.loopj.android.http.AsyncHttpClient;
@@ -42,9 +46,10 @@ public class YandexDownloader {
 
     }
 
-    public YandexDownloader(DownloadItemViewModel progressObject, DownloaderListener waitingListener) {
+
+
+    public YandexDownloader(DownloadItemViewModel progressObject) {
         mDownloadItemViewModel = progressObject;
-        updateListener(waitingListener);
     }
 
     public void updateListener(@Nullable DownloaderListener waitingListener) {
@@ -83,9 +88,10 @@ public class YandexDownloader {
                 try {
                     String link = response.getString("link");
                     String name = response.getString("name");
-                    if(downloaderListener != null)
-                        downloaderListener.addMetaData(
-                                new DownloadItemViewModel(Integer.parseInt(trackId), name, link, LinkParse.LinkType.YANDEX_TRACK));
+                    String id = response.getString("id");
+                    if(downloaderMetaDataListener != null)
+                        downloaderMetaDataListener.addMetaData(
+                                new DownloadItemViewModel(Integer.parseInt(id), name, link, LinkParse.LinkType.YANDEX_TRACK));
                 } catch (org.json.JSONException e) {
                     e.printStackTrace();
                 }
@@ -95,6 +101,11 @@ public class YandexDownloader {
                 int progress = (int)((bytesWritten*100)/totalSize);
                 Log.i("MyLOG", "bytesWritten: " + bytesWritten
                         + " totalSize: " + totalSize + " Progress " + progress + "%");
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                super.onFailure(statusCode, headers, responseString, throwable);
             }
         });
     }
@@ -109,9 +120,10 @@ public class YandexDownloader {
                         JSONObject o = (JSONObject) response.get(i);
                         String link = o.getString("link");
                         String name = o.getString("name");
-                        if(downloaderListener != null)
-                            downloaderListener.addMetaData(
-                                    new DownloadItemViewModel(Integer.parseInt(albumId) ,name, link, LinkParse.LinkType.YANDEX_TRACK));
+                        String id = o.getString("id");
+                        if(downloaderMetaDataListener != null)
+                            downloaderMetaDataListener.addMetaData(
+                                    new DownloadItemViewModel(Integer.parseInt(id) ,name, link, LinkParse.LinkType.YANDEX_TRACK));
                     } catch (org.json.JSONException e) {
                         e.printStackTrace();
                     }
@@ -126,76 +138,81 @@ public class YandexDownloader {
         });
     }
 
+    class WaitingTask extends AsyncTask<Void, Integer, Void> {
+        @Override
+        protected Void doInBackground(Void... voids) {
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public void downloadUsingByteArray(){
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
+                Path path = Paths.get(outputDir.getPath(), mDownloadItemViewModel.getSongName()+".mp3");
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
-            Path path = Paths.get(outputDir.getPath(), mDownloadItemViewModel.getSongName()+".mp3");
+                SyncHttpClient client = new SyncHttpClient();
+                client.get(mDownloadItemViewModel.getLink(), new AsyncHttpResponseHandler() {
 
-        SyncHttpClient client = new SyncHttpClient();
-        client.get(mDownloadItemViewModel.getLink(), new AsyncHttpResponseHandler() {
-
-            @Override
-            public void onStart() {
-            }
-
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] response) {
-                try {
-                    Files.write(path, response);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onProgress(long bytesWritten, long totalSize) {
-                int progress = (int)((bytesWritten*100)/totalSize);
-                Log.i("MyLOG", "bytesWritten: " + bytesWritten
-                        + " totalSize: " + totalSize + " Progress " + progress + "%");
-                //downloaderListener.setProgress(progress);
-
-                mDownloadItemViewModel.setProgress(progress);	// Update data set
-                if (mWaitingListenerWeakReference != null) {
-                    DownloaderListener listener = mWaitingListenerWeakReference.get();
-                    if (listener != null) {
-                        listener.setProgress(progress);
+                    @Override
+                    public void onStart() {
                     }
-                }
 
-            }
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] errorResponse, Throwable e) {
-
-            }
-
-            @Override
-            public void onRetry(int retryNo) {
-
-            }
-            @Override
-            public void onFinish() {
-                if (mWaitingListenerWeakReference != null) {
-                    DownloaderListener listener = mWaitingListenerWeakReference.get();
-                    if (listener != null) {
-                        listener.setProgressCompleted(0);
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, byte[] response) {
+                        try {
+                            Files.write(path, response);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
 
+                    @Override
+                    public void onProgress(long bytesWritten, long totalSize) {
+                        int progress = (int)((bytesWritten*100)/totalSize);
+                        Log.i("MyLOG", "bytesWritten: " + bytesWritten
+                                + " totalSize: " + totalSize + " Progress " + progress + "%");
+
+
+                        mDownloadItemViewModel.setProgress(progress);	// Update data set
+                        if (mWaitingListenerWeakReference != null) {
+                            DownloaderListener listener = mWaitingListenerWeakReference.get();
+                            if (listener != null) {
+                                listener.setProgress(progress);
+                            }
+                        }
+
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers, byte[] errorResponse, Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onRetry(int retryNo) {
+
+                    }
+                    @Override
+                    public void onFinish() {
+                        downloaderMetaDataListener.setProgressCompleted(mDownloadItemViewModel.getId());
+                    }
+
+                });
             }
-
-        });
+            return null;
         }
     }
 
-    private static DownloaderListener downloaderListener;
-
-    // метод-сеттер для привязки колбэка к получателю событий
-    public void setDownloaderListener(DownloaderListener listener) {
-        downloaderListener = listener;
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public WaitingTask downloadUsingByteArray(){
+       WaitingTask task = new WaitingTask();
+       task.execute();
+       return task;
     }
 
+    private static DownloaderMetaDataListener downloaderMetaDataListener;
+
+    // метод-сеттер для привязки колбэка к получателю событий
+    public void setDownloaderListener(DownloaderMetaDataListener listener) {
+        downloaderMetaDataListener = listener;
+    }
 }
+
+
+

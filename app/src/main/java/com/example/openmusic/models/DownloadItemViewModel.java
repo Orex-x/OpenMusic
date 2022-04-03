@@ -12,7 +12,7 @@ public class DownloadItemViewModel {
     private int id, progress;
     private String SongName, link;
     private LinkParse.LinkType linkType;
-    private boolean queue;
+    private boolean isDownloading;
 
     public DownloadItemViewModel(int id, String songName, String link, LinkParse.LinkType linkType) {
         this.id = id;
@@ -20,15 +20,15 @@ public class DownloadItemViewModel {
         SongName = songName;
         this.link = link;
         this.linkType = linkType;
-        this.queue = false;
+        this.isDownloading = false;
     }
 
-    public boolean isQueue() {
-        return queue;
+    public boolean isDownloading() {
+        return isDownloading;
     }
 
-    public void setQueue(boolean queue) {
-        this.queue = queue;
+    public void setDownloading(boolean downloading) {
+        isDownloading = downloading;
     }
 
     public int getId() {

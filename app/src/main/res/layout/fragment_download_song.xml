@@ -17,36 +17,49 @@
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/edxLink" />
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
 
-    <EditText
-        android:id="@+id/edxLink"
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
         android:layout_marginTop="16dp"
-        android:ems="10"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="36dp"
-        android:inputType="textPersonName"
-        android:hint="Link..."
-        android:textSize="24sp"
-        style="@style/EditEditStyle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <ImageButton
-        android:id="@+id/btnClear_link"
-        android:layout_width="10dp"
-        android:layout_height="10dp"
-        android:layout_marginLeft="8dp"
-        android:background="@null"
-        android:src="@drawable/ic_baseline_clear_24"
-        app:layout_constraintBottom_toBottomOf="@+id/edxLink"
-        app:layout_constraintStart_toEndOf="@+id/edxLink"
-        app:layout_constraintTop_toTopOf="@+id/edxLink" />
+        <EditText
+            android:id="@+id/edxLink"
+            style="@style/EditEditStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="3"
+            android:ems="10"
+            android:hint="Search..."
+            android:inputType="textPersonName"
+            android:textSize="24sp" />
 
+        <ImageButton
+            android:id="@+id/btnSearch"
+            style="@style/ButtonStyle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="8dp"
+            android:visibility="visible"
+            android:src="@drawable/ic_baseline_search_24"/>
+
+        <ProgressBar
+            android:id="@+id/progressBarMetaData"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginRight="8dp"
+            android:visibility="gone"
+            android:layout_marginLeft="4dp"
+            />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list_song_queue"
@@ -54,7 +67,7 @@
         android:layout_height="match_parent"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
-        android:layout_marginTop="110dp"
+        android:layout_marginTop="120dp"
         android:layout_marginBottom="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
