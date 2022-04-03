@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,6 +48,8 @@ public class DownloadSongFragment extends Fragment implements DownloaderMetaData
 
 
     ArrayList<DownloadItemViewModel> downloadItemViewModels = new ArrayList<>();
+    private SparseArray<YandexDownloader> mWaitingTaskYandexDownloaders = new SparseArray<>();
+    private SparseArray<YoutubeDownloader> mWaitingTaskYoutubeDownloaders = new SparseArray<>();
 
     ProgressAdapter progressAdapter;
 
@@ -73,21 +76,25 @@ public class DownloadSongFragment extends Fragment implements DownloaderMetaData
         edxLink = v.findViewById(R.id.edxLink);
         txtProgress = v.findViewById(R.id.txtProgress);
         btnDownload = v.findViewById(R.id.btnDownload);
-        btnDownload.setEnabled(false);
+        if(downloadItemViewModels.size() == 0)
+            btnDownload.setEnabled(false);
         btnSearch = v.findViewById(R.id.btnSearch);
         list_song_queue = v.findViewById(R.id.list_song_queue);
         list_song_queue.setLayoutManager(new LinearLayoutManager(getContext(),
                 RecyclerView.VERTICAL, false));
 
-/*        youtubeDownloader = new YoutubeDownloader();
-        youtubeDownloader.setDownloaderListener(this);*/
+        youtubeDownloader = new YoutubeDownloader();
+        youtubeDownloader.setDownloaderListener(this);
         yandexDownloader = new YandexDownloader();
         yandexDownloader.setDownloaderListener(this);
 
 
         progressAdapter = new ProgressAdapter();
         list_song_queue.setAdapter(progressAdapter);
-        progressAdapter.updateProgressObjects(downloadItemViewModels);
+        progressAdapter.updateProgressObjects(
+                downloadItemViewModels,
+                mWaitingTaskYandexDownloaders,
+                mWaitingTaskYoutubeDownloaders);
 
         animScale = AnimationUtils.loadAnimation(getContext(), R.anim.scale);
         animScaleReverse = AnimationUtils.loadAnimation(getContext(), R.anim.scale_reverse);
@@ -111,6 +118,7 @@ public class DownloadSongFragment extends Fragment implements DownloaderMetaData
                         yandexDownloader.loadMetaDataByAlbumId(linkParse.getId());
                         break;
                     case YOUTUBE:
+                        youtubeDownloader.loadMetaDataByVideoId(linkParse.getId());
                         break;
                     case YOUTUBE_MUSIC:
 
@@ -162,8 +170,20 @@ public class DownloadSongFragment extends Fragment implements DownloaderMetaData
     @Override
     public void addMetaData(DownloadItemViewModel model) {
         downloadItemViewModels.add(model);
-        progressAdapter.addMWaitingTaskSparseArray(model);
-        progressAdapter.updateProgressObjects(downloadItemViewModels);
+        if(model.getLinkType() == LinkParse.LinkType.YOUTUBE){
+            int id = mWaitingTaskYoutubeDownloaders.size() + 1;
+            model.setId(id);
+            mWaitingTaskYoutubeDownloaders.put(id, new YoutubeDownloader(model));
+        }
+        if(model.getLinkType() == LinkParse.LinkType.YANDEX_TRACK){
+            int id = mWaitingTaskYandexDownloaders.size() + 1;
+            model.setId(id);
+            mWaitingTaskYandexDownloaders.put(id, new YandexDownloader(model));
+        }
+
+        progressAdapter.updateProgressObjects(downloadItemViewModels,
+                mWaitingTaskYandexDownloaders,
+                mWaitingTaskYoutubeDownloaders);
         progressBarMetaData.setVisibility(View.GONE);
         btnSearch.setVisibility(View.VISIBLE);
         btnSearch.startAnimation(animScale);
@@ -178,20 +198,23 @@ public class DownloadSongFragment extends Fragment implements DownloaderMetaData
         handler.post(new Runnable() {
             @Override
             public void run() {
+                mListener.updateList();
+
                 DownloadItemViewModel model = findDownloadItemViewModelById(key);
                 if(model != null){
                     downloadItemViewModels.remove(model);
                     if(downloadItemViewModels.size() == 0)
                         btnDownload.setEnabled(false);
-                    progressAdapter.updateProgressObjects(downloadItemViewModels);
-
+                    progressAdapter.updateProgressObjects(
+                            downloadItemViewModels,
+                            mWaitingTaskYandexDownloaders,
+                            mWaitingTaskYoutubeDownloaders);
                 }
             }
         });
     }
 
     public DownloadItemViewModel findDownloadItemViewModelById(int key){
-
         for (DownloadItemViewModel model : downloadItemViewModels){
             if(model.getId() == key)
                 return model;

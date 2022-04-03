@@ -13,9 +13,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.openmusic.LinkParse;
 import com.example.openmusic.R;
 import com.example.openmusic.downloaders.DownloaderListener;
 import com.example.openmusic.downloaders.YandexDownloader;
+import com.example.openmusic.downloaders.YoutubeDownloader;
 import com.example.openmusic.models.DownloadItemViewModel;
 
 
@@ -24,26 +26,34 @@ import java.util.ArrayList;
 public class ProgressAdapter extends RecyclerView.Adapter<ProgressAdapter.ProgressViewHolder> {
 
     private ArrayList<DownloadItemViewModel> mDownloadItemViewModelList = new ArrayList<>();
-    private SparseArray<YandexDownloader> mWaitingTaskSparseArray = new SparseArray<>();
+    private SparseArray<YandexDownloader> mWaitingTaskYandexDownloaders = new SparseArray<>();
+    private SparseArray<YoutubeDownloader> mWaitingTaskYoutubeDownloaders = new SparseArray<>();
 
 
 
-    public void updateProgressObjects(@NonNull ArrayList<DownloadItemViewModel> mDownloadItemViewModelList) {
+    public void updateProgressObjects(@NonNull ArrayList<DownloadItemViewModel> mDownloadItemViewModelList,
+                                      SparseArray<YandexDownloader> mWaitingTaskYandexDownloaders,
+                                      SparseArray<YoutubeDownloader> mWaitingTaskYoutubeDownloaders) {
         this.mDownloadItemViewModelList = mDownloadItemViewModelList;
+        this.mWaitingTaskYandexDownloaders = mWaitingTaskYandexDownloaders;
+        this.mWaitingTaskYoutubeDownloaders = mWaitingTaskYoutubeDownloaders;
         notifyDataSetChanged();
-    }
-
-    public void addMWaitingTaskSparseArray(DownloadItemViewModel model){
-        mWaitingTaskSparseArray.put(model.getId(), new YandexDownloader(model));
     }
 
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void downloadAllProgressObjects() {
         for(DownloadItemViewModel model : mDownloadItemViewModelList){
-            YandexDownloader task = mWaitingTaskSparseArray.get(model.getId());
-            task.downloadUsingByteArray();
-            model.setDownloading(true);
+            if(model.getLinkType() == LinkParse.LinkType.YANDEX_TRACK){
+                YandexDownloader task = mWaitingTaskYandexDownloaders.get(model.getId());
+                task.downloadUsingByteArray();
+                model.setDownloading(true);
+            }
+            if(model.getLinkType() == LinkParse.LinkType.YOUTUBE){
+                YoutubeDownloader task = mWaitingTaskYoutubeDownloaders.get(model.getId());
+                task.downloadYoutubeAsync();
+                model.setDownloading(true);
+            }
         }
         notifyDataSetChanged();
     }
@@ -63,9 +73,13 @@ public class ProgressAdapter extends RecyclerView.Adapter<ProgressAdapter.Progre
 
     @Override
     public void onViewRecycled(ProgressViewHolder holder) {
-        YandexDownloader task = mWaitingTaskSparseArray.get(holder.getId());
-        if (task != null) {
-            task.updateListener(null);
+        YandexDownloader taskYandex = mWaitingTaskYandexDownloaders.get(holder.getId());
+        if (taskYandex != null) {
+            taskYandex.updateListener(null);
+        }
+        YoutubeDownloader taskYoutube = mWaitingTaskYoutubeDownloaders.get(holder.getId());
+        if (taskYoutube != null) {
+            taskYoutube.updateListener(null);
         }
         super.onViewRecycled(holder);
     }
@@ -99,9 +113,13 @@ public class ProgressAdapter extends RecyclerView.Adapter<ProgressAdapter.Progre
             txtProgress.setText(progressObject.getProgress() + "%");
             mProgressBar.setProgress(progressObject.getProgress());
 
-            YandexDownloader task = mWaitingTaskSparseArray.get(mId);
+            YandexDownloader task = mWaitingTaskYandexDownloaders.get(mId);
             if (task != null) {
                 task.updateListener(this);
+            }
+            YoutubeDownloader taskYoutube = mWaitingTaskYoutubeDownloaders.get(mId);
+            if (taskYoutube != null) {
+                taskYoutube.updateListener(null);
             }
 
             btnDownload.setOnClickListener(view -> {
@@ -112,10 +130,20 @@ public class ProgressAdapter extends RecyclerView.Adapter<ProgressAdapter.Progre
 
         public void download(){
             // Create the task, set the listener, add to the task controller, and run
-            YandexDownloader task = mWaitingTaskSparseArray.get(mId);
-            task.updateListener(ProgressViewHolder.this);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                task.downloadUsingByteArray();
+
+            YandexDownloader task = mWaitingTaskYandexDownloaders.get(mId);
+            if(task != null){
+                task.updateListener(ProgressViewHolder.this);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    task.downloadUsingByteArray();
+                }
+            }
+            YoutubeDownloader taskYoutube = mWaitingTaskYoutubeDownloaders.get(mId);
+            if(taskYoutube != null){
+                taskYoutube.updateListener(ProgressViewHolder.this);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    taskYoutube.downloadYoutubeAsync();
+                }
             }
         }
 

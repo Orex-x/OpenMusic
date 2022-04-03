@@ -6,6 +6,7 @@ import android.widget.TextView;
 
 import com.example.openmusic.LinkParse;
 import com.example.openmusic.downloaders.DownloaderListener;
+import com.github.kiulian.downloader.model.videos.formats.AudioFormat;
 
 public class DownloadItemViewModel {
 
@@ -13,14 +14,35 @@ public class DownloadItemViewModel {
     private String SongName, link;
     private LinkParse.LinkType linkType;
     private boolean isDownloading;
+    private AudioFormat audioFormat;
 
-    public DownloadItemViewModel(int id, String songName, String link, LinkParse.LinkType linkType) {
-        this.id = id;
+
+    public DownloadItemViewModel(String songName, String link, LinkParse.LinkType linkType) {
         this.progress = 0;
         SongName = songName;
         this.link = link;
         this.linkType = linkType;
         this.isDownloading = false;
+    }
+
+    public DownloadItemViewModel(String songName, AudioFormat audioFormat, LinkParse.LinkType linkType) {
+        this.progress = 0;
+        SongName = songName;
+        this.audioFormat = audioFormat;
+        this.linkType = linkType;
+        this.isDownloading = false;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public AudioFormat getAudioFormat() {
+        return audioFormat;
+    }
+
+    public void setAudioFormat(AudioFormat audioFormat) {
+        this.audioFormat = audioFormat;
     }
 
     public boolean isDownloading() {

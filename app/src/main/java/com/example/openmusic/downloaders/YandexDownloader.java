@@ -46,8 +46,6 @@ public class YandexDownloader {
 
     }
 
-
-
     public YandexDownloader(DownloadItemViewModel progressObject) {
         mDownloadItemViewModel = progressObject;
     }
@@ -91,7 +89,7 @@ public class YandexDownloader {
                     String id = response.getString("id");
                     if(downloaderMetaDataListener != null)
                         downloaderMetaDataListener.addMetaData(
-                                new DownloadItemViewModel(Integer.parseInt(id), name, link, LinkParse.LinkType.YANDEX_TRACK));
+                                new DownloadItemViewModel(name, link, LinkParse.LinkType.YANDEX_TRACK));
                 } catch (org.json.JSONException e) {
                     e.printStackTrace();
                 }
@@ -123,7 +121,8 @@ public class YandexDownloader {
                         String id = o.getString("id");
                         if(downloaderMetaDataListener != null)
                             downloaderMetaDataListener.addMetaData(
-                                    new DownloadItemViewModel(Integer.parseInt(id) ,name, link, LinkParse.LinkType.YANDEX_TRACK));
+                                    new DownloadItemViewModel(name,
+                                            link, LinkParse.LinkType.YANDEX_TRACK));
                     } catch (org.json.JSONException e) {
                         e.printStackTrace();
                     }
@@ -168,7 +167,6 @@ public class YandexDownloader {
                         Log.i("MyLOG", "bytesWritten: " + bytesWritten
                                 + " totalSize: " + totalSize + " Progress " + progress + "%");
 
-
                         mDownloadItemViewModel.setProgress(progress);	// Update data set
                         if (mWaitingListenerWeakReference != null) {
                             DownloaderListener listener = mWaitingListenerWeakReference.get();
@@ -200,10 +198,9 @@ public class YandexDownloader {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    public WaitingTask downloadUsingByteArray(){
-       WaitingTask task = new WaitingTask();
-       task.execute();
-       return task;
+    public void downloadUsingByteArray(){
+        WaitingTask task = new WaitingTask();
+        task.execute();
     }
 
     private static DownloaderMetaDataListener downloaderMetaDataListener;
