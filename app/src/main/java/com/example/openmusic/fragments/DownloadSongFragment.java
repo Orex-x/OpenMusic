@@ -25,6 +25,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.example.openmusic.LinkParse;
 import com.example.openmusic.adpters.ProgressAdapter;
 import com.example.openmusic.downloaders.DownloaderMetaDataListener;
@@ -212,6 +214,16 @@ public class DownloadSongFragment extends Fragment implements DownloaderMetaData
                 }
             }
         });
+    }
+
+    @Override
+    public void onFailure(String message) {
+        progressBarMetaData.setVisibility(View.GONE);
+        btnSearch.setVisibility(View.VISIBLE);
+        btnSearch.startAnimation(animScale);
+        btnSearch.startAnimation(animScaleReverse);
+        btnDownload.setEnabled(true);
+        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     public DownloadItemViewModel findDownloadItemViewModelById(int key){

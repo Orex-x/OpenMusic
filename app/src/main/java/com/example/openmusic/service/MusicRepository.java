@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Path;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -17,6 +18,7 @@ import com.example.openmusic.models.Song;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -114,6 +116,7 @@ public class MusicRepository {
     }
 
     public void add(Context context, Song song){
+
         // Add a specific media item.
         ContentResolver resolver = context
                 .getContentResolver();
@@ -126,10 +129,14 @@ public class MusicRepository {
             audioCollection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         }
 
+
+        File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
+
+
+
         ContentValues newSongDetails = new ContentValues();
         newSongDetails.put(MediaStore.Audio.Media.TITLE, song.getTitle());
         newSongDetails.put(MediaStore.Audio.Media.ARTIST, song.getArtist());
-
         newSongDetails.put(MediaStore.Audio.Media.DISPLAY_NAME, song.getDisplayName());
         newSongDetails.put(MediaStore.Audio.Media.RELATIVE_PATH, song.getPath());
         newSongDetails.put(MediaStore.Audio.Media.DURATION, song.getDuration());
@@ -139,5 +146,9 @@ public class MusicRepository {
         }catch (NullPointerException e){}
 
         resolver.insert(audioCollection, newSongDetails);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            resolver.update(audioCollection, newSongDetails,
+                    MediaStore.Audio.Media.DISPLAY_NAME + "=" + 1, new String[]{});
+        }
     }
 }

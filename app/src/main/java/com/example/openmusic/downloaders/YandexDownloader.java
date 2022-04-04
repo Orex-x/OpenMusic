@@ -102,39 +102,48 @@ public class YandexDownloader {
             }
 
             @Override
-            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+            public void onFailure(int statusCode, Header[] headers,
+                                  String responseString, Throwable throwable) {
                 super.onFailure(statusCode, headers, responseString, throwable);
+                downloaderMetaDataListener.onFailure("server " + throwable.getMessage());
+
             }
         });
     }
 
-    public void loadMetaDataByAlbumId(final String albumId) throws JSONException {
-        ApiClient.get("GetYSongsByAlbumId?albumId="+albumId, null, new JsonHttpResponseHandler() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
-                for(int i = 0; i < response.length(); i++){
-                    try {
-                        JSONObject o = (JSONObject) response.get(i);
-                        String link = o.getString("link");
-                        String name = o.getString("name");
-                        String id = o.getString("id");
-                        if(downloaderMetaDataListener != null)
-                            downloaderMetaDataListener.addMetaData(
-                                    new DownloadItemViewModel(name,
-                                            link, LinkParse.LinkType.YANDEX_TRACK));
-                    } catch (org.json.JSONException e) {
-                        e.printStackTrace();
+    public void loadMetaDataByAlbumId(final String albumId) {
+            ApiClient.get("GetYSongsByAlbumId?albumId="+albumId, null, new JsonHttpResponseHandler() {
+                @RequiresApi(api = Build.VERSION_CODES.O)
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
+                    for(int i = 0; i < response.length(); i++){
+                        try {
+                            JSONObject o = (JSONObject) response.get(i);
+                            String link = o.getString("link");
+                            String name = o.getString("name");
+                            String id = o.getString("id");
+                            if(downloaderMetaDataListener != null)
+                                downloaderMetaDataListener.addMetaData(
+                                        new DownloadItemViewModel(name,
+                                                link, LinkParse.LinkType.YANDEX_TRACK));
+                        } catch (org.json.JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
-            }
-            @Override
-            public void onProgress(long bytesWritten, long totalSize) {
-                int progress = (int)((bytesWritten*100)/totalSize);
-                Log.i("MyLOG", "bytesWritten: " + bytesWritten
-                        + " totalSize: " + totalSize + " Progress " + progress + "%");
-            }
-        });
+                @Override
+                public void onProgress(long bytesWritten, long totalSize) {
+                    int progress = (int)((bytesWritten*100)/totalSize);
+                    Log.i("MyLOG", "bytesWritten: " + bytesWritten
+                            + " totalSize: " + totalSize + " Progress " + progress + "%");
+                }
+                @Override
+                public void onFailure(int statusCode, Header[] headers,
+                                      String responseString, Throwable throwable) {
+                    super.onFailure(statusCode, headers, responseString, throwable);
+                    downloaderMetaDataListener.onFailure("server " + throwable.getMessage());
+                }
+            });
     }
 
     class WaitingTask extends AsyncTask<Void, Integer, Void> {
@@ -178,8 +187,9 @@ public class YandexDownloader {
                     }
 
                     @Override
-                    public void onFailure(int statusCode, Header[] headers, byte[] errorResponse, Throwable e) {
-
+                    public void onFailure(int statusCode, Header[] headers, byte[]
+                            errorResponse, Throwable e) {
+                        downloaderMetaDataListener.onFailure(e.getMessage());
                     }
 
                     @Override

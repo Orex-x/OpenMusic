@@ -43,6 +43,7 @@ import android.database.Cursor;
 
 import com.example.openmusic.adpters.SongAdapter;
 import com.example.openmusic.fragments.DownloadSongFragment;
+import com.example.openmusic.fragments.PlaylistsFragment;
 import com.example.openmusic.fragments.SongControlFragment;
 import com.example.openmusic.fragments.SongListFragment;
 import com.example.openmusic.models.Player;
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements
     private SongListFragment songListFragment;
     private SongControlFragment songControlFragment;
     private DownloadSongFragment downloadSongFragment;
+    private PlaylistsFragment playlistsFragment;
 
     private static final int REQUEST_CODE_READ_FILES = 1;
     private static boolean READ_FILES_GRANTED = false;
@@ -81,6 +83,8 @@ public class MainActivity extends AppCompatActivity implements
     private final String SIMPLE_SONG_CONTROL_FRAGMENT_TAG = "SIMPLE_SONG_CONTROL_FRAGMENT_TAG";
     private final String SIMPLE_SONG_LIST_FRAGMENT_TAG = "SIMPLE_SONG_LIST_FRAGMENT_TAG";
     private final String SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG = "SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG";
+    private final String SIMPLE_PLAYLIST_FRAGMENT_TAG = "SIMPLE_PLAYLIST_FRAGMENT_TAG";
+
 
     private String current_fragment = SIMPLE_SONG_LIST_FRAGMENT_TAG;
 
@@ -167,20 +171,24 @@ public class MainActivity extends AppCompatActivity implements
             downloadSongFragment = (DownloadSongFragment)
                     getSupportFragmentManager().findFragmentByTag(SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG);
 
+            playlistsFragment = (PlaylistsFragment)
+                    getSupportFragmentManager().findFragmentByTag(SIMPLE_PLAYLIST_FRAGMENT_TAG);
+
             current_fragment = savedInstanceState.getString("current_fragment");
 
         }
+        // only create fragment if they haven't been instantiated already
         if (songControlFragment == null) {
-            // only create fragment if they haven't been instantiated already
             songControlFragment = new SongControlFragment();
         }
         if (songListFragment == null) {
-            // only create fragment if they haven't been instantiated already
             songListFragment = new SongListFragment();
         }
         if (downloadSongFragment == null) {
-            // only create fragment if they haven't been instantiated already
             downloadSongFragment = new DownloadSongFragment();
+        }
+        if(playlistsFragment == null){
+            playlistsFragment = new PlaylistsFragment();
         }
 
         downloadSongFragment.setSongListFragmentListener(this);
@@ -212,6 +220,14 @@ public class MainActivity extends AppCompatActivity implements
                         fragmentTransaction.replace(R.id.fragment, downloadSongFragment, SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG);
                         fragmentTransaction.commit();
                         current_fragment = SIMPLE_DOWNLOAD_SONG_FRAGMENT_TAG;
+                        return true;
+                    }
+                    case R.id.page_3:{
+                        FragmentManager fragmentManager = getSupportFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                        fragmentTransaction.replace(R.id.fragment, playlistsFragment, SIMPLE_PLAYLIST_FRAGMENT_TAG);
+                        fragmentTransaction.commit();
+                        current_fragment = SIMPLE_PLAYLIST_FRAGMENT_TAG;
                         return true;
                     }
                 }
