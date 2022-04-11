@@ -16,6 +16,7 @@ import com.example.openmusic.downloaders.DownloaderListener;
 import com.example.openmusic.downloaders.DownloaderMetaDataListener;
 import com.example.openmusic.models.DownloadItemViewModel;
 import com.example.openmusic.models.Player;
+import com.example.openmusic.service.MusicRepository;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -151,7 +152,7 @@ public class YandexDownloader {
         protected Void doInBackground(Void... voids) {
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
+                File outputDir = new File(MusicRepository.getMusicRepository().getPublicDirectoryMusic());
                 Path path = Paths.get(outputDir.getPath(), mDownloadItemViewModel.getSongName()+".mp3");
 
                 SyncHttpClient client = new SyncHttpClient();

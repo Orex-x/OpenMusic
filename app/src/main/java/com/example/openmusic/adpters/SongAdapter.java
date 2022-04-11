@@ -45,8 +45,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
         mListener = listener;
     }
 
-
-
     // создаем сам интерфейс и указываем метод и передаваемые им аргументы
     // View на котором произошло событие и позиция этого View
     public interface OnCardClickListener {
@@ -65,7 +63,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
 
     @Override
     public SongAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
         View view = inflater.inflate(R.layout.music_item_swipe, parent, false);
         return new ViewHolder(view);
     }
@@ -85,7 +82,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
             holder.txtListItem.setText(song.getTitle().substring(0,30) + "...");
         }else
             holder.txtListItem.setText(song.getTitle());
-
     }
 
     @Override
@@ -129,10 +125,6 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder>{
             }
         };
     }
-
-
-
-
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
 

@@ -1,7 +1,6 @@
 package com.example.openmusic;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -15,30 +14,18 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.RemoteException;
-import android.provider.MediaStore;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import java.io.File;
-
-import java.util.Collections;
-import java.util.Comparator;
-
-import android.net.Uri;
-import android.content.ContentResolver;
-import android.database.Cursor;
-
 
 
 import com.example.openmusic.adpters.SongAdapter;
@@ -46,7 +33,6 @@ import com.example.openmusic.fragments.DownloadSongFragment;
 import com.example.openmusic.fragments.PlaylistsFragment;
 import com.example.openmusic.fragments.SongControlFragment;
 import com.example.openmusic.fragments.SongListFragment;
-import com.example.openmusic.models.Player;
 import com.example.openmusic.models.Song;
 import com.example.openmusic.service.MusicRepository;
 import com.example.openmusic.service.PlayerService;
@@ -57,7 +43,8 @@ public class MainActivity extends AppCompatActivity implements
         SongAdapter.OnCardClickListener,
         SongListFragment.SongListFragmentListener,
         SongControlFragment.SongControlFragmentListener,
-        DownloadSongFragment.DownloadSongFragmentListener
+        DownloadSongFragment.DownloadSongFragmentListener,
+        PlaylistsFragment.PlaylistsFragmentListener
 {
 
     SongAdapter adapter;
@@ -136,21 +123,19 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
                 playerServiceBinder = (PlayerService.PlayerServiceBinder) service;
-                Log.i("TAG_SERVISE", "1");
-                if(playerServiceBinder == null)
-                    Log.i("TAG_NULL", "playerServiceBinder = null");
-                mediaController = Instances.getMediaSessionCompat(MainActivity.this,
-                        playerServiceBinder.getMediaSessionToken());
+                if(playerServiceBinder == null){
+                    mediaController = Instances.getMediaSessionCompat(MainActivity.this,
+                            playerServiceBinder.getMediaSessionToken());
 
-                mediaController.registerCallback(callback);
-                callback.onPlaybackStateChanged(mediaController.getPlaybackState());
+                    mediaController.registerCallback(callback);
+                    callback.onPlaybackStateChanged(mediaController.getPlaybackState());
+                }
+
             }
 
             @Override
             public void onServiceDisconnected(ComponentName name) {
                 playerServiceBinder = null;
-                if(playerServiceBinder == null)
-                    Log.i("TAG_NULL", "playerServiceBinder = null");
                 if (mediaController != null) {
                     mediaController.unregisterCallback(callback);
                     mediaController = null;
@@ -194,9 +179,10 @@ public class MainActivity extends AppCompatActivity implements
         downloadSongFragment.setSongListFragmentListener(this);
         songControlFragment.setSongControlFragmentListener(this);
         songListFragment.setSongListFragmentListener(this);
+        playlistsFragment.setPlaylistsFragmentListener(this);
 
         musicRepository = MusicRepository.getMusicRepository();
-        musicRepository.update(this);
+        musicRepository.updateSongList(this);
 
 
 
@@ -261,7 +247,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private Runnable permissionGranted = new Runnable() {
         public void run() {
-            musicRepository.update(getApplicationContext());
+            musicRepository.updateSongList(getApplicationContext());
             adapter.notifyDataSetChanged();
         }
     };
@@ -285,9 +271,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-
-
-
     // метод, который получит события из нашего колбэка
     @Override
     public void onDeleteClick(View view,final int pos) {
@@ -296,16 +279,20 @@ public class MainActivity extends AppCompatActivity implements
                 song.getPath() + song.getDisplayName()).getPath();
         File file = new File(path);
         try{
-            file.delete();
-            musicRepository.getSongs().remove(pos);
-            if(pos == musicRepository.getCurrentItemIndex()){
-                if(pos == musicRepository.getSongs().size())
-                    onSongClick(view, pos - 1);
-                else
-                    onSongClick(view, pos);
-            }
-            Toast.makeText(MainActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
-            adapter.notifyDataSetChanged();
+            boolean isDel = file.delete();
+            if(isDel){
+                musicRepository.getSongs().remove(pos);
+                if(pos == musicRepository.getCurrentItemIndex()){
+                    if(pos == musicRepository.getSongs().size())
+                        onSongClick(view, pos - 1);
+                    else
+                        onSongClick(view, pos);
+                }
+                Toast.makeText(MainActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
+                adapter.notifyDataSetChanged();
+            }else
+                Toast.makeText(MainActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
+
         }catch (Exception e){
             Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
@@ -326,6 +313,16 @@ public class MainActivity extends AppCompatActivity implements
                         RecyclerView.VERTICAL, false));
         recyclerView.setAdapter(adapter);
 
+    }
+
+    @Override
+    public void updateSongsList(String dir) {
+        musicRepository.updateSongList(this, dir);
+    }
+
+    @Override
+    public void updateSongsList() {
+        musicRepository.updateSongList(this);
     }
 
     @Override

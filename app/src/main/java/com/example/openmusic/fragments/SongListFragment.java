@@ -22,14 +22,11 @@ import com.example.openmusic.R;
 
 
 public class SongListFragment extends Fragment {
-
-
     RecyclerView lvMusics;
     ImageButton btnUpdateList;
     Player player;
     EditText edtSearch;
     Animation animScale, animScaleReverse;
-
 
     //for saving
     String searchText;

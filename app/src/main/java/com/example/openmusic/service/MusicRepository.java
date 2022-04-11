@@ -13,9 +13,11 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
 
+import com.example.openmusic.models.Playlist;
 import com.example.openmusic.models.Song;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -28,13 +30,21 @@ import java.util.Objects;
 public class MusicRepository {
 
     private ArrayList<Song> songs = new ArrayList<>();
+    //private ArrayList<Song> playlistSongs = new ArrayList<>();
+    private ArrayList<Playlist> playlists = new ArrayList<>();
     private int currentItemIndex = 0;
+    private String PublicDirectoryMusic;
+
+    public MusicRepository(String publicDirectoryMusic) {
+        PublicDirectoryMusic = publicDirectoryMusic;
+    }
 
     private static MusicRepository musicRepository;
 
     public static MusicRepository getMusicRepository(){
         if(musicRepository == null){
-            musicRepository = new MusicRepository();
+            musicRepository = new MusicRepository(
+                    Environment.getExternalStoragePublicDirectory("Music").getPath());
         }
         return musicRepository;
     }
@@ -63,6 +73,18 @@ public class MusicRepository {
         return songs;
     }
 
+    public ArrayList<Playlist> getPlaylists() {
+        return playlists;
+    }
+
+   /* public ArrayList<Song> getPlaylistSongs() {
+        return playlistSongs;
+    }*/
+
+    public String getPublicDirectoryMusic() {
+        return PublicDirectoryMusic;
+    }
+
     public void setCurrentItemIndex(int currentItemIndex) {
         this.currentItemIndex = currentItemIndex;
     }
@@ -71,11 +93,12 @@ public class MusicRepository {
         return currentItemIndex;
     }
 
-    public void update(Context context) {
+    public void updateSongList(Context context) {
         songs.clear();
         ContentResolver musicResolver = context.getContentResolver();
         Uri musicUri =  MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
+        Cursor musicCursor = musicResolver.query(musicUri,
+                null, null, null, null);
 
 
         if(musicCursor!=null && musicCursor.moveToFirst()){
@@ -115,6 +138,69 @@ public class MusicRepository {
         });
     }
 
+    public void updatePlayLists(){
+        playlists.clear();
+        //классика
+        File directory = new File(PublicDirectoryMusic);
+
+
+        // get all the files from a directory
+        File[] fList = directory.listFiles();
+
+
+        for (File dir : fList) {
+            if(dir.isDirectory() && !dir.isHidden())
+                playlists.add(new Playlist(dir.getName()));
+        }
+    }
+
+    public void updateSongList(Context context, String dir) {
+        songs.clear();
+        ContentResolver musicResolver = context.getContentResolver();
+        Uri musicUri =  MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        Cursor musicCursor = musicResolver.query(musicUri,
+                null, null, null, null);
+
+        if(musicCursor!=null && musicCursor.moveToFirst()){
+            //get columns
+            int titleColumn = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.TITLE);
+            int artistColumn = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.ARTIST);
+            int album = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.ALBUM);
+            int displayNameColumn = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.DISPLAY_NAME);
+            int relativePathColumn = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.RELATIVE_PATH);
+            int duration = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.DURATION);
+
+            //add songs to list
+            do {
+                String thisRelativePath = musicCursor.getString(relativePathColumn);
+                if(thisRelativePath.contains(dir)){
+                    String thisAlbum = musicCursor.getString(album);
+                    String thisTitle = musicCursor.getString(titleColumn);
+                    String thisArtist = musicCursor.getString(artistColumn);
+                    String thisDisplayName = musicCursor.getString(displayNameColumn);
+
+                    int thisDuration = musicCursor.getInt(duration);
+                    songs.add(new Song(thisTitle, thisArtist, thisDisplayName,
+                            thisRelativePath, thisDuration, thisAlbum));
+                }
+            }
+            while (musicCursor.moveToNext());
+        }
+
+        //сортировка в алфавитном порядке
+        Collections.sort(songs, new Comparator<Song>(){
+            public int compare(Song a, Song b){
+                return a.getTitle().compareTo(b.getTitle());
+            }
+        });
+    }
+
     public void add(Context context, Song song){
 
         // Add a specific media item.
@@ -130,7 +216,7 @@ public class MusicRepository {
         }
 
 
-        File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
+        File outputDir = new File(PublicDirectoryMusic);
 
 
 

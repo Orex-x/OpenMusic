@@ -88,7 +88,8 @@ public class YoutubeDownloader {
             com.github.kiulian.downloader.YoutubeDownloader downloader =
                     new com.github.kiulian.downloader.YoutubeDownloader();
 
-            File outputDir = new File(Environment.getExternalStoragePublicDirectory("Music").getPath());
+            File outputDir = new File(
+                    Environment.getExternalStoragePublicDirectory("Music").getPath());
 
             RequestVideoFileDownload request = new
                     RequestVideoFileDownload(mDownloadItemViewModel.getAudioFormat())
